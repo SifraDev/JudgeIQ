@@ -47,7 +47,7 @@ export function Orb({ onToggle }: OrbProps) {
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/40 to-transparent animate-spin" style={{ animationDuration: '3s' }} />
             <Loader2 className="w-12 h-12 text-primary animate-spin z-10" />
             <video 
-              src={`${import.meta.env.BASE_URL}orb-video.mp4`}
+              src={`${import.meta.env.BASE_URL}orb-video.webm`}
               autoPlay 
               loop 
               muted 

@@ -32,7 +32,7 @@ export function ResultsView() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="min-h-screen pb-32"
+      className="min-h-screen pb-36"
     >
       <motion.header
         initial={{ opacity: 0, y: -20 }}
@@ -55,24 +55,31 @@ export function ResultsView() {
       </motion.header>
 
       <div ref={contentRef} className="max-w-5xl mx-auto px-6 py-10 flex flex-col gap-10">
-        {profileText && (
+        {profileText ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
             className="glass-panel p-8 rounded-xl"
           >
-            <h2 className="font-display text-2xl text-primary mb-4 flex items-center gap-2">
+            <h2 className="font-display text-2xl text-primary mb-6 flex items-center gap-2">
               <Scale className="w-5 h-5" />
               Judge Profile Summary
             </h2>
-            <div className="prose prose-invert prose-sm max-w-none text-gray-300 leading-relaxed whitespace-pre-wrap">
-              {profileText}
+            <div className="space-y-4 text-gray-300 leading-relaxed text-[15px]">
+              {agentMessages.map((entry, idx) => (
+                <motion.p
+                  key={idx}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 + idx * 0.15, duration: 0.5 }}
+                >
+                  {entry.message}
+                </motion.p>
+              ))}
             </div>
           </motion.div>
-        )}
-
-        {!profileText && (
+        ) : (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -112,20 +119,20 @@ function FloatingOrb() {
       initial={{ opacity: 0, scale: 0.5, y: 50 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ delay: 0.6, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed bottom-6 right-6 z-40"
+      className="fixed bottom-8 right-8 z-40"
     >
       <div className="relative">
         <motion.div
-          className="absolute inset-0 rounded-full bg-primary/30 blur-xl -m-2"
+          className="absolute inset-0 rounded-full bg-primary/30 blur-xl -m-3"
           animate={{
             scale: isActive ? [1, 1.4, 1] : 1,
             opacity: isActive ? [0.3, 0.6, 0.3] : 0.2,
           }}
           transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
         />
-        <div className="relative w-16 h-16 rounded-full overflow-hidden border border-primary/30 shadow-[0_0_30px_rgba(212,175,55,0.2)]">
+        <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-primary/40 shadow-[0_0_40px_rgba(212,175,55,0.25)]">
           <video
-            src={`${import.meta.env.BASE_URL}orb-video.mp4`}
+            src={`${import.meta.env.BASE_URL}orb-video.webm`}
             autoPlay
             loop
             muted
@@ -135,17 +142,25 @@ function FloatingOrb() {
               (e.target as HTMLVideoElement).style.display = 'none';
             }}
           />
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
             <Mic className={`w-5 h-5 ${isActive ? 'text-primary' : 'text-white/50'}`} />
           </div>
         </div>
         {isActive && (
           <motion.div
-            className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 border-2 border-black"
+            className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-black"
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ duration: 1, repeat: Infinity }}
           />
         )}
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+          className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] text-primary/60 uppercase tracking-wider whitespace-nowrap font-mono"
+        >
+          {isActive ? 'Listening' : 'Mic Ready'}
+        </motion.span>
       </div>
     </motion.div>
   );

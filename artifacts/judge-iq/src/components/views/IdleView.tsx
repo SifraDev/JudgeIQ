@@ -76,6 +76,15 @@ export function IdleView({ onStart }: IdleViewProps) {
           Dev Mode — Use toggles to simulate states
         </motion.span>
       )}
+
+      <video
+        src={`${import.meta.env.BASE_URL}orb-video.webm`}
+        preload="auto"
+        muted
+        playsInline
+        className="absolute w-0 h-0 opacity-0 pointer-events-none"
+        aria-hidden="true"
+      />
     </motion.div>
   );
 }

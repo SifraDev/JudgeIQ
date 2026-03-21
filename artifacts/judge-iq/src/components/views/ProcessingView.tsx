@@ -22,7 +22,7 @@ export function ProcessingView() {
         >
           <div className="relative w-72 h-72 md:w-96 md:h-96 rounded-2xl overflow-hidden border border-primary/20 shadow-[0_0_80px_rgba(212,175,55,0.15)]">
             <video
-              src={`${import.meta.env.BASE_URL}orb-video.mp4`}
+              src={`${import.meta.env.BASE_URL}orb-video.webm`}
               autoPlay
               loop
               muted

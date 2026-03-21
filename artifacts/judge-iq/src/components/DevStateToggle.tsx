@@ -4,18 +4,60 @@ import { Button } from '@/components/ui/button';
 import { Settings2, Mic, Cpu, Volume2, RotateCcw, ChevronRight, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const MOCK_PROFILE = [
+  'Judge William Alsup is a United States District Judge for the Northern District of California, appointed by President Bill Clinton in 1999. Born on March 26, 1945, in Jackson, Mississippi, Judge Alsup earned his J.D. from Harvard Law School in 1971. Before joining the federal bench, he served as a law clerk to Justice William O. Douglas of the U.S. Supreme Court and spent over two decades in private practice at Morrison & Foerster LLP, where he specialized in intellectual property and antitrust litigation.',
+
+  'Judge Alsup is widely recognized for his deep engagement with technology cases. He presided over Oracle v. Google, one of the most significant software copyright disputes in history, and famously taught himself the Java programming language to better understand the technical arguments. His rulings have shaped key legal precedents around API copyrightability, patent eligibility of software, and trade secret protections in Silicon Valley. He has also handled major antitrust matters, securities fraud cases, and civil rights litigation throughout his tenure.',
+
+  'Known for his rigorous and hands-on approach to case management, Judge Alsup maintains one of the most demanding courtrooms in the Northern District. He frequently issues detailed, technically informed opinions and is not hesitant to challenge counsel on both sides. Legal commentators have noted his intellectual curiosity, his commitment to understanding the facts at a granular level, and his willingness to hold parties accountable for litigation conduct. He continues to serve as an active federal judge.',
+];
+
+const MOCK_CITATIONS = [
+  {
+    url: 'https://supreme.justia.com/justices/william-alsup/',
+    title: 'Judge William Alsup — Federal Judicial Profile',
+    description: 'Comprehensive profile of Judge William Alsup, U.S. District Court for the Northern District of California. Includes appointment history, notable cases, and judicial philosophy.',
+    markdown: 'Full Justia profile content...',
+  },
+  {
+    url: 'https://ballotpedia.org/William_Alsup',
+    title: 'William Alsup — Ballotpedia',
+    description: 'Political and judicial background of William Alsup, including his nomination by President Clinton, Senate confirmation, and key rulings on technology and intellectual property law.',
+    markdown: 'Ballotpedia article content...',
+  },
+  {
+    url: 'https://www.courtlistener.com/person/william-alsup/',
+    title: 'Opinions Authored by Judge William Alsup',
+    description: 'Browse court opinions and orders authored by Judge William Alsup, including landmark decisions in Oracle v. Google, Uber v. Waymo, and other significant technology disputes.',
+    markdown: 'CourtListener opinions listing...',
+  },
+  {
+    url: 'https://law.justia.com/cases/federal/district-courts/california/candce/3:2010cv03561/231846/1202/',
+    title: 'Oracle America, Inc. v. Google Inc. — Final Ruling',
+    description: 'Full text of Judge Alsup\'s landmark ruling in Oracle v. Google regarding the copyrightability of Java APIs, holding that APIs are not subject to copyright protection.',
+    markdown: 'Oracle v. Google ruling text...',
+  },
+  {
+    url: 'https://ballotpedia.org/Notable_opinions_of_Judge_William_Alsup',
+    title: 'Notable Opinions of Judge William Alsup',
+    description: 'A curated list of significant judicial opinions by Judge Alsup, spanning technology, civil rights, immigration, and antitrust law from 1999 to present.',
+    markdown: 'Notable opinions listing...',
+  },
+];
+
 export function DevStateToggle() {
-  const { state, setState, reset, addLog, setSearchResults } = useVoiceState();
+  const { state, setState, reset, addLog, setSearchResults, addTranscript } = useVoiceState();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleState = (newState: VoiceState) => () => {
-    if (newState === 'SPEAKING' && state === 'PROCESSING') {
-      setSearchResults([
-        { url: 'https://justia.com/judge/example', title: 'Judge Profile — Justia', description: 'Federal judge appointed in 2010.', markdown: 'Full profile text from Justia...' },
-        { url: 'https://ballotpedia.org/Judge_Example', title: 'Judge Example — Ballotpedia', description: 'Political and judicial background.', markdown: 'Ballotpedia article content...' },
-        { url: 'https://courtlistener.com/judge/example', title: 'Opinions by Judge Example', description: 'Court opinions and rulings.', markdown: 'CourtListener rulings...' },
-      ]);
-      addLog('Firecrawl returned 3 documents.', 'success');
+    if (newState === 'SPEAKING') {
+      reset();
+      setSearchResults(MOCK_CITATIONS);
+      addLog(`Firecrawl returned ${MOCK_CITATIONS.length} documents.`, 'success');
+      MOCK_PROFILE.forEach(paragraph => {
+        addTranscript('agent', paragraph);
+      });
+      addLog('Agent synthesizing profile from extracted documents...', 'info');
     }
     setState(newState);
   };
