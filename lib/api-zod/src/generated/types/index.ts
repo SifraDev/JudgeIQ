@@ -6,4 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./errorResponse";
+export * from "./firecrawlResult";
+export * from "./firecrawlSearchRequest";
+export * from "./firecrawlSearchResponse";
 export * from "./healthStatus";

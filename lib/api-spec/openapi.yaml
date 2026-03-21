@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: firecrawl
+    description: Firecrawl search operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /firecrawl/search:
+    post:
+      operationId: firecrawlSearch
+      tags: [firecrawl]
+      summary: Search for judge information via Firecrawl
+      description: Accepts a judge name query, searches Justia, CourtListener, and Ballotpedia via Firecrawl Search API, and returns raw JSON results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FirecrawlSearchRequest"
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FirecrawlSearchResponse"
+        "500":
+          description: Search failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +60,46 @@ components:
           type: string
       required:
         - status
-
+    FirecrawlSearchRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          description: The judge name or search query
+      required:
+        - query
+    FirecrawlSearchResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        query:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/FirecrawlResult"
+      required:
+        - success
+        - query
+        - results
+    FirecrawlResult:
+      type: object
+      properties:
+        url:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        markdown:
+          type: string
+      required:
+        - url
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error

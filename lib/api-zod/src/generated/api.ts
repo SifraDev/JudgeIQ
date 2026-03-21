@@ -14,3 +14,24 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Accepts a judge name query, searches Justia, CourtListener, and Ballotpedia via Firecrawl Search API, and returns raw JSON results.
+ * @summary Search for judge information via Firecrawl
+ */
+export const FirecrawlSearchBody = zod.object({
+  query: zod.string().describe("The judge name or search query"),
+});
+
+export const FirecrawlSearchResponse = zod.object({
+  success: zod.boolean(),
+  query: zod.string(),
+  results: zod.array(
+    zod.object({
+      url: zod.string(),
+      title: zod.string().optional(),
+      description: zod.string().optional(),
+      markdown: zod.string().optional(),
+    }),
+  ),
+});

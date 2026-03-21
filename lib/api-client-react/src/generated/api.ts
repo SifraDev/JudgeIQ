@@ -5,18 +5,26 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type {
+  ErrorResponse,
+  FirecrawlSearchRequest,
+  FirecrawlSearchResponse,
+  HealthStatus,
+} from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -99,3 +107,90 @@ export function useHealthCheck<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Accepts a judge name query, searches Justia, CourtListener, and Ballotpedia via Firecrawl Search API, and returns raw JSON results.
+ * @summary Search for judge information via Firecrawl
+ */
+export const getFirecrawlSearchUrl = () => {
+  return `/api/firecrawl/search`;
+};
+
+export const firecrawlSearch = async (
+  firecrawlSearchRequest: FirecrawlSearchRequest,
+  options?: RequestInit,
+): Promise<FirecrawlSearchResponse> => {
+  return customFetch<FirecrawlSearchResponse>(getFirecrawlSearchUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(firecrawlSearchRequest),
+  });
+};
+
+export const getFirecrawlSearchMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof firecrawlSearch>>,
+    TError,
+    { data: BodyType<FirecrawlSearchRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof firecrawlSearch>>,
+  TError,
+  { data: BodyType<FirecrawlSearchRequest> },
+  TContext
+> => {
+  const mutationKey = ["firecrawlSearch"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof firecrawlSearch>>,
+    { data: BodyType<FirecrawlSearchRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return firecrawlSearch(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FirecrawlSearchMutationResult = NonNullable<
+  Awaited<ReturnType<typeof firecrawlSearch>>
+>;
+export type FirecrawlSearchMutationBody = BodyType<FirecrawlSearchRequest>;
+export type FirecrawlSearchMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Search for judge information via Firecrawl
+ */
+export const useFirecrawlSearch = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof firecrawlSearch>>,
+    TError,
+    { data: BodyType<FirecrawlSearchRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof firecrawlSearch>>,
+  TError,
+  { data: BodyType<FirecrawlSearchRequest> },
+  TContext
+> => {
+  return useMutation(getFirecrawlSearchMutationOptions(options));
+};

@@ -1,0 +1,11 @@
+packages:
+  "framer-motion": "For premium animations and orb states"
+  "html2pdf.js": "For exporting the judge brief to PDF"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility function to efficiently merge Tailwind CSS classes"
+  "date-fns": "For formatting timestamps in the terminal"
+
+images:
+  - path: "artifacts/judge-iq/public/images/legal-bg.png"
+    description: "Dark, moody, professional legal abstract background. Deep navy blue and slate colors with subtle, elegant gold geometric lines resembling scales of justice or columns, extremely minimal, cinematic lighting."
+    aspect_ratio: "16:9"

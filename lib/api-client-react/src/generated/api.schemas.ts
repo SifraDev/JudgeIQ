@@ -8,3 +8,25 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface FirecrawlSearchRequest {
+  /** The judge name or search query */
+  query: string;
+}
+
+export interface FirecrawlResult {
+  url: string;
+  title?: string;
+  description?: string;
+  markdown?: string;
+}
+
+export interface FirecrawlSearchResponse {
+  success: boolean;
+  query: string;
+  results: FirecrawlResult[];
+}
+
+export interface ErrorResponse {
+  error: string;
+}
