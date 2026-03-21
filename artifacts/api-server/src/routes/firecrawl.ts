@@ -4,6 +4,13 @@ import { FirecrawlSearchBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
+interface FirecrawlItem {
+  url?: string;
+  title?: string;
+  description?: string;
+  markdown?: string;
+}
+
 router.post("/firecrawl/search", async (req, res) => {
   try {
     const { query } = FirecrawlSearchBody.parse(req.body);
@@ -20,21 +27,27 @@ router.post("/firecrawl/search", async (req, res) => {
 
     req.log.info({ searchQuery }, "Executing Firecrawl search");
 
-    const searchResult: any = await firecrawl.search(searchQuery, {
+    const searchResult = await firecrawl.search(searchQuery, {
       limit: 10,
     });
 
-    const rawResults = searchResult.data || searchResult.web || [];
+    const rawResults: FirecrawlItem[] =
+      (searchResult as Record<string, FirecrawlItem[]>)["data"] ??
+      (searchResult as Record<string, FirecrawlItem[]>)["web"] ??
+      [];
 
     if (!rawResults.length) {
-      req.log.warn({ searchResult: JSON.stringify(searchResult).slice(0, 500) }, "No results from Firecrawl");
+      req.log.warn(
+        { searchResult: JSON.stringify(searchResult).slice(0, 500) },
+        "No results from Firecrawl"
+      );
     }
 
-    const results = rawResults.map((item: any) => ({
-      url: item.url || "",
-      title: item.title || "",
-      description: item.description || "",
-      markdown: item.markdown || "",
+    const results = rawResults.map((item) => ({
+      url: item.url ?? "",
+      title: item.title ?? "",
+      description: item.description ?? "",
+      markdown: item.markdown ?? "",
     }));
 
     req.log.info({ resultCount: results.length }, "Firecrawl search completed");
@@ -44,14 +57,17 @@ router.post("/firecrawl/search", async (req, res) => {
       query,
       results,
     });
-  } catch (error: any) {
-    if (error?.name === "ZodError" || error?.issues) {
-      req.log.warn({ error: error.message }, "Invalid request body");
-      res.status(400).json({ error: "Invalid request body", details: error.issues || error.message });
+  } catch (error: unknown) {
+    const err = error as Error & { issues?: unknown; name?: string };
+    if (err.name === "ZodError" || err.issues) {
+      req.log.warn({ error: err.message }, "Invalid request body");
+      res
+        .status(400)
+        .json({ error: "Invalid request body", details: err.issues ?? err.message });
       return;
     }
-    req.log.error({ error: error.message }, "Firecrawl search error");
-    res.status(500).json({ error: error.message || "Search failed" });
+    req.log.error({ error: err.message }, "Firecrawl search error");
+    res.status(500).json({ error: err.message || "Search failed" });
   }
 });
 

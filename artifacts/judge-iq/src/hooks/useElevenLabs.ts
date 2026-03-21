@@ -1,8 +1,14 @@
 import { useCallback, useRef } from 'react';
 import { useConversation } from '@elevenlabs/react';
+import type { Mode } from '@elevenlabs/react';
 import { useVoiceState } from '@/context/VoiceStateContext';
 
-const AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID || '';
+const AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID as string || '';
+
+interface SearchParameters {
+  query?: string;
+  judge_name?: string;
+}
 
 export function useElevenLabs() {
   const { setState, addLog } = useVoiceState();
@@ -18,48 +24,50 @@ export function useElevenLabs() {
       setState('IDLE');
       isToolRunning.current = false;
     },
-    onMessage: (message: any) => {
-      if (message.type === 'agent_response') {
-        addLog(`Agent: ${(message as any).message?.slice(0, 120) || '...'}`, 'info');
+    onMessage: (props) => {
+      if (props.role === 'agent') {
+        addLog(`Agent: ${props.message.slice(0, 120)}`, 'info');
       }
     },
-    onError: (error: any) => {
-      addLog(`ElevenAgents error: ${error?.message || String(error)}`, 'error');
+    onError: (message) => {
+      addLog(`ElevenAgents error: ${message}`, 'error');
       setState('IDLE');
     },
-    onModeChange: (mode: any) => {
-      if (mode.mode === 'speaking') {
+    onModeChange: (prop: { mode: Mode }) => {
+      if (prop.mode === 'speaking') {
         if (isToolRunning.current) {
           addLog('Extracted documents successfully. Synthesizing...', 'success');
           isToolRunning.current = false;
         }
         setState('SPEAKING');
-      } else if (mode.mode === 'listening') {
+      } else if (prop.mode === 'listening') {
         setState('LISTENING');
         addLog('Listening to voice input...', 'info');
       }
     },
     clientTools: {
-      firecrawl_search: async (parameters: any) => {
+      firecrawl_search: async (parameters: SearchParameters): Promise<string> => {
         const query = parameters.query || parameters.judge_name || '';
         addLog(`Triggering Firecrawl Search Tool for "${query}"...`, 'warning');
         setState('PROCESSING');
         isToolRunning.current = true;
 
         try {
-          const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
+          const baseUrl = (import.meta.env.BASE_URL as string).replace(/\/$/, '');
           const response = await fetch(`${baseUrl}/api/firecrawl/search`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query }),
           });
           const data = await response.json();
-          addLog(`Firecrawl returned ${data.results?.length || 0} documents.`, 'success');
+          const resultCount = Array.isArray(data.results) ? data.results.length : 0;
+          addLog(`Firecrawl returned ${resultCount} documents.`, 'success');
 
           return JSON.stringify(data);
-        } catch (error: any) {
-          addLog(`Firecrawl search failed: ${error.message}`, 'error');
-          return JSON.stringify({ error: error.message, success: false, results: [] });
+        } catch (error: unknown) {
+          const msg = error instanceof Error ? error.message : String(error);
+          addLog(`Firecrawl search failed: ${msg}`, 'error');
+          return JSON.stringify({ error: msg, success: false, results: [] });
         }
       },
     },
@@ -73,9 +81,10 @@ export function useElevenLabs() {
     addLog('Connecting to ElevenAgents...', 'system');
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
-      await conversation.startSession({ agentId: AGENT_ID });
-    } catch (error: any) {
-      addLog(`Failed to start session: ${error.message}`, 'error');
+      await conversation.startSession({ agentId: AGENT_ID, connectionType: 'webrtc' as const });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      addLog(`Failed to start session: ${msg}`, 'error');
     }
   }, [conversation, addLog]);
 

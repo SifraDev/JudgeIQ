@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useFirecrawlSearch } from '@workspace/api-client-react';
 import { useVoiceState } from '@/context/VoiceStateContext';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { TerminalSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export function DevConsole({ onResults }: { onResults: (data: any) => void }) {
+import type { FirecrawlResult } from '@workspace/api-client-react';
+
+export function DevConsole({ onResults }: { onResults: (data: FirecrawlResult[]) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const { addLog, setState } = useVoiceState();

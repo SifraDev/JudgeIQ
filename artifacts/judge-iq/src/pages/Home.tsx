@@ -5,9 +5,8 @@ import { SystemLogs } from '@/components/SystemLogs';
 import { DevStateToggle } from '@/components/DevStateToggle';
 import { DevConsole } from '@/components/DevConsole';
 import { Citations } from '@/components/Citations';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Scale, FileText, Download } from 'lucide-react';
-// @ts-ignore - no types for html2pdf
 import html2pdf from 'html2pdf.js';
 import type { FirecrawlResult } from '@workspace/api-client-react';
 
@@ -26,9 +25,9 @@ export default function Home() {
     const opt = {
       margin:       1,
       filename:     'Judge_Profile_Brief.pdf',
-      image:        { type: 'jpeg', quality: 0.98 },
+      image:        { type: 'jpeg' as const, quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true },
-      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' as const }
     };
 
     html2pdf().set(opt).from(contentRef.current).save();

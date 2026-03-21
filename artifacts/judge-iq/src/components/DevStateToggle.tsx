@@ -1,6 +1,6 @@
 import React from 'react';
 import { useVoiceState, VoiceState } from '@/context/VoiceStateContext';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Settings2, Mic, Cpu, Volume2, RotateCcw } from 'lucide-react';
 
 export function DevStateToggle() {
