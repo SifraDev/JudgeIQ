@@ -6,12 +6,10 @@ import { Input } from '@/components/ui/input';
 import { TerminalSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import type { FirecrawlResult } from '@workspace/api-client-react';
-
-export function DevConsole({ onResults }: { onResults: (data: FirecrawlResult[]) => void }) {
+export function DevConsole() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const { addLog, setState } = useVoiceState();
+  const { addLog, setState, setSearchResults } = useVoiceState();
   
   const searchMutation = useFirecrawlSearch();
 
@@ -27,9 +25,10 @@ export function DevConsole({ onResults }: { onResults: (data: FirecrawlResult[])
       const result = await searchMutation.mutateAsync({ data: { query } });
       addLog(`[Dev Console] Search complete. Found ${result.results.length} documents.`, 'success');
       setState('IDLE');
-      onResults(result.results);
-    } catch (error: any) {
-      addLog(`[Dev Console] Search failed: ${error.message}`, 'error');
+      setSearchResults(result.results);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      addLog(`[Dev Console] Search failed: ${msg}`, 'error');
       setState('IDLE');
     }
   };

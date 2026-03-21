@@ -11,7 +11,7 @@ interface SearchParameters {
 }
 
 export function useElevenLabs() {
-  const { setState, addLog } = useVoiceState();
+  const { setState, addLog, setSearchResults } = useVoiceState();
   const isToolRunning = useRef(false);
 
   const conversation = useConversation({
@@ -60,8 +60,9 @@ export function useElevenLabs() {
             body: JSON.stringify({ query }),
           });
           const data = await response.json();
-          const resultCount = Array.isArray(data.results) ? data.results.length : 0;
-          addLog(`Firecrawl returned ${resultCount} documents.`, 'success');
+          const results = Array.isArray(data.results) ? data.results : [];
+          addLog(`Firecrawl returned ${results.length} documents.`, 'success');
+          setSearchResults(results);
 
           return JSON.stringify(data);
         } catch (error: unknown) {

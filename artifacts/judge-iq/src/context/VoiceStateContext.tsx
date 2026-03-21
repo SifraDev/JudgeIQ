@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { format } from 'date-fns';
+import type { FirecrawlResult } from '@workspace/api-client-react';
 
 export type VoiceState = 'IDLE' | 'LISTENING' | 'PROCESSING' | 'SPEAKING';
 
@@ -13,8 +13,10 @@ export interface LogEntry {
 interface VoiceStateContextType {
   state: VoiceState;
   logs: LogEntry[];
+  searchResults: FirecrawlResult[];
   setState: (state: VoiceState) => void;
   addLog: (message: string, type?: LogEntry['type']) => void;
+  setSearchResults: (results: FirecrawlResult[]) => void;
   reset: () => void;
 }
 
@@ -22,6 +24,7 @@ const VoiceStateContext = createContext<VoiceStateContextType | undefined>(undef
 
 export function VoiceStateProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<VoiceState>('IDLE');
+  const [searchResults, setSearchResults] = useState<FirecrawlResult[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([
     {
       id: 'init-1',
@@ -42,6 +45,7 @@ export function VoiceStateProvider({ children }: { children: ReactNode }) {
 
   const reset = useCallback(() => {
     setState('IDLE');
+    setSearchResults([]);
     setLogs([{
       id: Math.random().toString(36).substring(7),
       timestamp: new Date(),
@@ -50,7 +54,6 @@ export function VoiceStateProvider({ children }: { children: ReactNode }) {
     }]);
   }, []);
 
-  // Hook into state changes to auto-generate logs for dev testing
   const setVoiceState = useCallback((newState: VoiceState) => {
     setState(newState);
     switch (newState) {
@@ -70,7 +73,15 @@ export function VoiceStateProvider({ children }: { children: ReactNode }) {
   }, [addLog]);
 
   return (
-    <VoiceStateContext.Provider value={{ state, logs, setState: setVoiceState, addLog, reset }}>
+    <VoiceStateContext.Provider value={{
+      state,
+      logs,
+      searchResults,
+      setState: setVoiceState,
+      addLog,
+      setSearchResults,
+      reset,
+    }}>
       {children}
     </VoiceStateContext.Provider>
   );
