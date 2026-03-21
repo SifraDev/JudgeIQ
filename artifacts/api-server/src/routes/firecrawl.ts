@@ -28,7 +28,10 @@ router.post("/firecrawl/search", async (req, res) => {
     req.log.info({ searchQuery }, "Executing Firecrawl search");
 
     const searchResult = await firecrawl.search(searchQuery, {
-      limit: 10,
+      limit: 5,
+      scrapeOptions: {
+        formats: ["markdown"],
+      },
     });
 
     const rawResults: FirecrawlItem[] =
