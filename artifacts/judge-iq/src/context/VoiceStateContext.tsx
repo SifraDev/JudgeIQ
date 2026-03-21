@@ -21,6 +21,7 @@ interface VoiceStateContextType {
   logs: LogEntry[];
   searchResults: FirecrawlResult[];
   transcript: TranscriptEntry[];
+  hasResults: boolean;
   setState: (state: VoiceState) => void;
   addLog: (message: string, type?: LogEntry['type']) => void;
   setSearchResults: (results: FirecrawlResult[]) => void;
@@ -32,8 +33,9 @@ const VoiceStateContext = createContext<VoiceStateContextType | undefined>(undef
 
 export function VoiceStateProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<VoiceState>('IDLE');
-  const [searchResults, setSearchResults] = useState<FirecrawlResult[]>([]);
+  const [searchResults, setSearchResultsRaw] = useState<FirecrawlResult[]>([]);
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
+  const [hasResults, setHasResults] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([
     {
       id: 'init-1',
@@ -56,10 +58,18 @@ export function VoiceStateProvider({ children }: { children: ReactNode }) {
     setTranscript(prev => [...prev, { role, message, timestamp: new Date() }]);
   }, []);
 
+  const setSearchResults = useCallback((results: FirecrawlResult[]) => {
+    setSearchResultsRaw(results);
+    if (results.length > 0) {
+      setHasResults(true);
+    }
+  }, []);
+
   const reset = useCallback(() => {
     setState('IDLE');
-    setSearchResults([]);
+    setSearchResultsRaw([]);
     setTranscript([]);
+    setHasResults(false);
     setLogs([{
       id: Math.random().toString(36).substring(7),
       timestamp: new Date(),
@@ -92,6 +102,7 @@ export function VoiceStateProvider({ children }: { children: ReactNode }) {
       logs,
       searchResults,
       transcript,
+      hasResults,
       setState: setVoiceState,
       addLog,
       setSearchResults,

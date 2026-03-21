@@ -17,26 +17,21 @@ const ElevenLabsCinematicView = AGENT_ID
   ? lazy(() => import('@/components/ElevenLabsCinematicView').then(m => ({ default: m.ElevenLabsCinematicView })))
   : null;
 
+function getView(state: string, hasResults: boolean) {
+  if (state === 'PROCESSING') return 'processing';
+  if (state === 'SPEAKING') return 'results';
+  if (hasResults) return 'results';
+  return 'idle';
+}
+
 function DevCinematicView() {
-  const { state, setState } = useVoiceState();
+  const { state, setState, hasResults } = useVoiceState();
 
   const handleStart = useCallback(() => {
     setState('LISTENING');
   }, [setState]);
 
-  const currentView = (() => {
-    switch (state) {
-      case 'IDLE':
-      case 'LISTENING':
-        return 'idle';
-      case 'PROCESSING':
-        return 'processing';
-      case 'SPEAKING':
-        return 'results';
-      default:
-        return 'idle';
-    }
-  })();
+  const currentView = getView(state, hasResults);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">

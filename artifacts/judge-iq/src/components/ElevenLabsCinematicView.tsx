@@ -8,27 +8,22 @@ import { ResultsView } from '@/components/views/ResultsView';
 import { DevStateToggle } from '@/components/DevStateToggle';
 import { DevConsole } from '@/components/DevConsole';
 
+function getView(state: string, hasResults: boolean) {
+  if (state === 'PROCESSING') return 'processing';
+  if (state === 'SPEAKING') return 'results';
+  if (hasResults) return 'results';
+  return 'idle';
+}
+
 export function ElevenLabsCinematicView() {
-  const { state } = useVoiceState();
+  const { state, hasResults } = useVoiceState();
   const { start } = useElevenLabsSession();
 
   const handleStart = useCallback(() => {
     start();
   }, [start]);
 
-  const currentView = (() => {
-    switch (state) {
-      case 'IDLE':
-      case 'LISTENING':
-        return 'idle';
-      case 'PROCESSING':
-        return 'processing';
-      case 'SPEAKING':
-        return 'results';
-      default:
-        return 'idle';
-    }
-  })();
+  const currentView = getView(state, hasResults);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
