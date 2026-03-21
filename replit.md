@@ -42,24 +42,29 @@ artifacts-monorepo/
 
 ### Architecture
 
-- **Backend** (`artifacts/api-server`): Pure Firecrawl passthrough webhook at `POST /api/firecrawl/search`. No LLM on backend — ElevenAgents is the reasoning brain.
-- **Frontend** (`artifacts/judge-iq`): React+Vite app with animated orb, system logs terminal, dev toggles, citations panel, and PDF export.
+- **Backend** (`artifacts/api-server`): Pure Firecrawl passthrough webhook at `POST /api/firecrawl/search` with `scrapeOptions: { formats: ["markdown"] }`. No LLM on backend — ElevenAgents is the reasoning brain.
+- **Frontend** (`artifacts/judge-iq`): React+Vite SPA with cinematic 3-state flow. No React Router navigation — views swap via conditional rendering with Framer Motion `AnimatePresence`.
 - **ElevenAgents Integration** (`src/hooks/useElevenLabs.ts`): Dormant Phase 3 hook using `@elevenlabs/react`. Activated by setting `VITE_ELEVENLABS_AGENT_ID` env var. Registers `firecrawl_search` as a client tool.
 
-### 3-Phase Build Plan
+### Cinematic 3-State UX Flow
 
-1. **Phase 1**: Backend webhook + DevConsole for silent text-based testing (completed)
-2. **Phase 2**: Mocked UI states via DevStateToggle panel (completed)
-3. **Phase 3**: Real ElevenAgents voice integration — dormant behind `VITE_ELEVENLABS_AGENT_ID` toggle
+- **State 1 (Idle/Listening)**: Clean minimalist landing with centered orb + branding. User clicks orb to start.
+- **State 2 (Processing)**: Two-column layout — left: fire orb video, right: SystemLogs terminal showing Firecrawl steps.
+- **State 3 (Speaking/Results)**: Header bar + profile synthesis text + citations + PDF export. Small floating orb in bottom-right for follow-up Q&A.
+- `VoiceStateProvider` is at App level so ElevenLabs WebSocket stays alive across all view transitions.
+- Dev toggles (bottom-left) allow cycling through states without ElevenLabs credits.
 
 ### Key Frontend Components
 
-- `Orb.tsx` — Animated voice orb with 4 states: IDLE, LISTENING, PROCESSING, SPEAKING
+- `components/views/IdleView.tsx` — State 1: Centered orb landing screen
+- `components/views/ProcessingView.tsx` — State 2: Two-column search dashboard
+- `components/views/ResultsView.tsx` — State 3: Profile, citations, floating orb
+- `Orb.tsx` — Reusable animated voice orb with 4 visual states
 - `SystemLogs.tsx` — Real-time log terminal (auto-scrolling, color-coded)
-- `DevStateToggle.tsx` — Phase 2 state simulation panel (top-right)
+- `DevStateToggle.tsx` — Dev state simulation panel (bottom-left, collapsible)
 - `DevConsole.tsx` — Phase 1 manual webhook testing (bottom bar)
 - `Citations.tsx` — Grid of source citations from Firecrawl results
-- `VoiceStateContext.tsx` — Central state machine for voice states + logs
+- `VoiceStateContext.tsx` — Central state machine for voice states, logs, transcript, and search results
 - `useElevenLabs.ts` — Phase 3 dormant hook wrapping `@elevenlabs/react`
 
 ### UI Design

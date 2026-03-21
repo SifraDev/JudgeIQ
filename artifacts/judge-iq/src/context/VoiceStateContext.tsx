@@ -10,13 +10,21 @@ export interface LogEntry {
   type: 'info' | 'success' | 'warning' | 'error' | 'system';
 }
 
+export interface TranscriptEntry {
+  role: 'user' | 'agent';
+  message: string;
+  timestamp: Date;
+}
+
 interface VoiceStateContextType {
   state: VoiceState;
   logs: LogEntry[];
   searchResults: FirecrawlResult[];
+  transcript: TranscriptEntry[];
   setState: (state: VoiceState) => void;
   addLog: (message: string, type?: LogEntry['type']) => void;
   setSearchResults: (results: FirecrawlResult[]) => void;
+  addTranscript: (role: TranscriptEntry['role'], message: string) => void;
   reset: () => void;
 }
 
@@ -25,6 +33,7 @@ const VoiceStateContext = createContext<VoiceStateContextType | undefined>(undef
 export function VoiceStateProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<VoiceState>('IDLE');
   const [searchResults, setSearchResults] = useState<FirecrawlResult[]>([]);
+  const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([
     {
       id: 'init-1',
@@ -43,9 +52,14 @@ export function VoiceStateProvider({ children }: { children: ReactNode }) {
     }]);
   }, []);
 
+  const addTranscript = useCallback((role: TranscriptEntry['role'], message: string) => {
+    setTranscript(prev => [...prev, { role, message, timestamp: new Date() }]);
+  }, []);
+
   const reset = useCallback(() => {
     setState('IDLE');
     setSearchResults([]);
+    setTranscript([]);
     setLogs([{
       id: Math.random().toString(36).substring(7),
       timestamp: new Date(),
@@ -77,9 +91,11 @@ export function VoiceStateProvider({ children }: { children: ReactNode }) {
       state,
       logs,
       searchResults,
+      transcript,
       setState: setVoiceState,
       addLog,
       setSearchResults,
+      addTranscript,
       reset,
     }}>
       {children}

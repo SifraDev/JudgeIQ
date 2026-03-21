@@ -11,7 +11,7 @@ interface SearchParameters {
 }
 
 export function useElevenLabs() {
-  const { setState, addLog, setSearchResults } = useVoiceState();
+  const { setState, addLog, setSearchResults, addTranscript } = useVoiceState();
   const isToolRunning = useRef(false);
 
   const conversation = useConversation({
@@ -27,6 +27,9 @@ export function useElevenLabs() {
     onMessage: (props) => {
       if (props.role === 'agent') {
         addLog(`Agent: ${props.message.slice(0, 120)}`, 'info');
+        addTranscript('agent', props.message);
+      } else if (props.role === 'user') {
+        addTranscript('user', props.message);
       }
     },
     onError: (message) => {

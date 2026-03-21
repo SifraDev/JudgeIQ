@@ -23,7 +23,7 @@ export function SystemLogs() {
   };
 
   return (
-    <div className="glass-panel rounded-xl flex flex-col h-[500px] overflow-hidden">
+    <div className="glass-panel rounded-xl flex flex-col h-full min-h-[400px] overflow-hidden">
       <div className="bg-black/40 px-4 py-3 border-b border-white/5 flex items-center gap-2">
         <Terminal className="w-4 h-4 text-muted-foreground" />
         <h3 className="font-mono text-sm text-muted-foreground uppercase tracking-wider">System.Logs</h3>
