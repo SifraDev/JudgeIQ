@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useCallback } from 'react';
+import React, { useCallback, Component, type ReactNode } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useVoiceState } from '@/context/VoiceStateContext';
 import { IdleView } from '@/components/views/IdleView';
@@ -6,16 +6,9 @@ import { ProcessingView } from '@/components/views/ProcessingView';
 import { ResultsView } from '@/components/views/ResultsView';
 import { DevStateToggle } from '@/components/DevStateToggle';
 import { DevConsole } from '@/components/DevConsole';
+import { ElevenLabsSessionProvider, useElevenLabsSession } from '@/components/ElevenLabsSession';
 
 const AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID || '';
-
-const ElevenLabsSessionProvider = AGENT_ID
-  ? lazy(() => import('@/components/ElevenLabsSession').then(m => ({ default: m.ElevenLabsSessionProvider })))
-  : null;
-
-const ElevenLabsCinematicView = AGENT_ID
-  ? lazy(() => import('@/components/ElevenLabsCinematicView').then(m => ({ default: m.ElevenLabsCinematicView })))
-  : null;
 
 function getView(state: string, hasResults: boolean) {
   if (state === 'PROCESSING') return 'processing';
@@ -24,13 +17,30 @@ function getView(state: string, hasResults: boolean) {
   return 'idle';
 }
 
-function DevCinematicView() {
-  const { state, setState, hasResults } = useVoiceState();
+class ElevenLabsErrorBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { hasError: boolean; errorMsg: string }
+> {
+  state = { hasError: false, errorMsg: '' };
 
-  const handleStart = useCallback(() => {
-    setState('LISTENING');
-  }, [setState]);
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, errorMsg: error.message };
+  }
 
+  componentDidCatch(error: Error) {
+    console.error('[ElevenLabs] Session error, falling back to dev mode:', error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
+function CinematicShell({ onStart }: { onStart: () => void }) {
+  const { state, hasResults } = useVoiceState();
   const currentView = getView(state, hasResults);
 
   return (
@@ -46,7 +56,7 @@ function DevCinematicView() {
 
       <div className="relative z-10">
         <AnimatePresence mode="wait">
-          {currentView === 'idle' && <IdleView key="idle" onStart={handleStart} />}
+          {currentView === 'idle' && <IdleView key="idle" onStart={onStart} />}
           {currentView === 'processing' && <ProcessingView key="processing" />}
           {currentView === 'results' && <ResultsView key="results" />}
         </AnimatePresence>
@@ -58,14 +68,34 @@ function DevCinematicView() {
   );
 }
 
+function ProductionInner() {
+  const { start } = useElevenLabsSession();
+
+  const handleStart = useCallback(() => {
+    start();
+  }, [start]);
+
+  return <CinematicShell onStart={handleStart} />;
+}
+
+function DevCinematicView() {
+  const { setState } = useVoiceState();
+
+  const handleStart = useCallback(() => {
+    setState('LISTENING');
+  }, [setState]);
+
+  return <CinematicShell onStart={handleStart} />;
+}
+
 export default function Home() {
-  if (ElevenLabsSessionProvider && ElevenLabsCinematicView) {
+  if (AGENT_ID) {
     return (
-      <Suspense fallback={<DevCinematicView />}>
+      <ElevenLabsErrorBoundary fallback={<DevCinematicView />}>
         <ElevenLabsSessionProvider>
-          <ElevenLabsCinematicView />
+          <ProductionInner />
         </ElevenLabsSessionProvider>
-      </Suspense>
+      </ElevenLabsErrorBoundary>
     );
   }
   return <DevCinematicView />;
