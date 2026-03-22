@@ -88,8 +88,19 @@ router.post("/research", async (req, res) => {
     }
 
     const spoken_script = synthesized.spoken_script || `No summary available for ${query}.`;
-    const tendencies = Array.isArray(synthesized.tendencies) ? synthesized.tendencies.slice(0, 3) : [];
-    const biases = Array.isArray(synthesized.biases) ? synthesized.biases.slice(0, 2) : [];
+
+    const rawTendencies = Array.isArray(synthesized.tendencies) ? synthesized.tendencies : [];
+    const tendencies = [
+      rawTendencies[0] || `Analyzing procedural patterns for ${query}.`,
+      rawTendencies[1] || "Evaluating courtroom management style.",
+      rawTendencies[2] || "Cross-referencing historical case outcomes.",
+    ];
+
+    const rawBiases = Array.isArray(synthesized.biases) ? synthesized.biases : [];
+    const biases = [
+      rawBiases[0] || "Insufficient data for bias determination.",
+      rawBiases[1] || "Further analysis recommended.",
+    ];
 
     req.log.info({ scriptLength: spoken_script.length, tendencies: tendencies.length, biases: biases.length }, "Research: synthesis complete");
 
