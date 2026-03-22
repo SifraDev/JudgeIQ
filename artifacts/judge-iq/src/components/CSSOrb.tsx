@@ -41,6 +41,7 @@ export function CSSOrb({ state, size = 'md' }: CSSorbProps) {
   const containerStyle = { width: s.px, height: s.px };
   const blurBase = Math.max(2, Math.round(s.px * 0.04));
 
+  const saturation = isSpeaking ? 'saturate(1.3) brightness(1.1)' : isListening ? 'saturate(1.15) brightness(1.05)' : 'saturate(1)';
   const rotationDuration = isSpeaking ? 3 : isListening ? 6 : 12;
   const glowOpacityRange = isSpeaking
     ? [0.6, 0.9, 0.6]
@@ -114,6 +115,7 @@ export function CSSOrb({ state, size = 'md' }: CSSorbProps) {
             exit={{ opacity: 0, scale: 0.6 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 flex items-center justify-center"
+            style={{ filter: saturation }}
           >
             <motion.div
               className="absolute rounded-full"
