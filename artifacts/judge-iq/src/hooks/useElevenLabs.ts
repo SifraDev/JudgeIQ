@@ -10,19 +10,29 @@ interface SearchParameters {
   judge_name?: string;
 }
 
+async function getSignedUrl(): Promise<string | null> {
+  try {
+    const baseUrl = (import.meta.env.BASE_URL as string || '').replace(/\/$/, '');
+    const res = await fetch(`${baseUrl}/api/elevenlabs/signed-url`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.signedUrl || null;
+  } catch {
+    return null;
+  }
+}
+
 export function useElevenLabs() {
   const { setState, addLog, setSearchResults, addTranscript } = useVoiceState();
   const isToolRunning = useRef(false);
   const retryCount = useRef(0);
   const isRetrying = useRef(false);
-  const sessionActive = useRef(false);
 
   const conversation = useConversation({
     onConnect: () => {
       try {
         retryCount.current = 0;
         isRetrying.current = false;
-        sessionActive.current = true;
         addLog('Connected to ElevenAgents.', 'success');
         setState('LISTENING');
       } catch (e) {
@@ -31,7 +41,6 @@ export function useElevenLabs() {
     },
     onDisconnect: () => {
       try {
-        sessionActive.current = false;
         isToolRunning.current = false;
 
         if (retryCount.current < MAX_RETRIES && !isRetrying.current) {
@@ -44,7 +53,7 @@ export function useElevenLabs() {
           return;
         }
 
-        addLog('Disconnected from ElevenAgents.', 'system');
+        addLog('Connection lost. Tap the orb to reconnect.', 'error');
         setState('IDLE');
       } catch (e) {
         console.warn('[useElevenLabs] onDisconnect error:', e);
@@ -121,16 +130,28 @@ export function useElevenLabs() {
     },
   });
 
+  const startSession = useCallback(async () => {
+    const signedUrl = await getSignedUrl();
+
+    if (signedUrl) {
+      addLog('Using WebSocket connection...', 'system');
+      await conversation.startSession({ signedUrl });
+    } else {
+      addLog('Using WebRTC connection...', 'system');
+      await conversation.startSession({ agentId: AGENT_ID, connectionType: 'webrtc' as const });
+    }
+  }, [conversation, addLog]);
+
   const attemptReconnect = useCallback(async () => {
     try {
-      await conversation.startSession({ agentId: AGENT_ID, connectionType: 'webrtc' as const });
+      await startSession();
     } catch (error: any) {
       isRetrying.current = false;
       const msg = error instanceof Error ? error.message : String(error);
-      addLog(`Reconnection failed: ${msg}`, 'error');
+      addLog(`Reconnection failed: ${msg}. Tap the orb to try again.`, 'error');
       setState('IDLE');
     }
-  }, [conversation, addLog, setState]);
+  }, [startSession, addLog, setState]);
 
   const start = useCallback(async () => {
     try {
@@ -151,13 +172,13 @@ export function useElevenLabs() {
         return;
       }
 
-      await conversation.startSession({ agentId: AGENT_ID, connectionType: 'webrtc' as const });
+      await startSession();
     } catch (error: any) {
       const msg = error instanceof Error ? error.message : String(error);
       addLog(`Failed to start session: ${msg}`, 'error');
       setState('IDLE');
     }
-  }, [conversation, addLog, setState]);
+  }, [startSession, addLog, setState]);
 
   const stop = useCallback(async () => {
     try {

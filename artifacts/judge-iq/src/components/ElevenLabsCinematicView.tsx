@@ -19,6 +19,7 @@ export function ElevenLabsCinematicView() {
   const { state, hasResults } = useVoiceState();
   const { start } = useElevenLabsSession();
   const hasStarted = useRef(false);
+  const hasConnectedBefore = useRef(false);
 
   useEffect(() => {
     if (!hasStarted.current) {
@@ -27,12 +28,18 @@ export function ElevenLabsCinematicView() {
     }
   }, [start]);
 
+  useEffect(() => {
+    if (state === 'LISTENING' || state === 'SPEAKING' || state === 'PROCESSING') {
+      hasConnectedBefore.current = true;
+    }
+  }, [state]);
+
   const handleReconnect = () => {
-    hasStarted.current = true;
     start();
   };
 
   const currentView = getView(state, hasResults);
+  const isReconnect = hasConnectedBefore.current && currentView === 'idle';
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -47,7 +54,9 @@ export function ElevenLabsCinematicView() {
 
       <div className="relative z-10">
         <AnimatePresence mode="wait">
-          {currentView === 'idle' && <IdleView key="idle" onStart={handleReconnect} />}
+          {currentView === 'idle' && (
+            <IdleView key="idle" onStart={handleReconnect} isReconnect={isReconnect} />
+          )}
           {currentView === 'processing' && <ProcessingView key="processing" />}
           {currentView === 'results' && <ResultsView key="results" />}
         </AnimatePresence>
