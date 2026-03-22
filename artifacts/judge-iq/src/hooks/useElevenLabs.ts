@@ -23,7 +23,7 @@ async function getSignedUrl(): Promise<string | null> {
 }
 
 export function useElevenLabs() {
-  const { setState, addLog, setSearchResults, setTendencies, setBiases, addTranscript } = useVoiceState();
+  const { setState, addLog, setResearchData, addTranscript } = useVoiceState();
   const isToolRunning = useRef(false);
   const retryCount = useRef(0);
   const isRetrying = useRef(false);
@@ -124,9 +124,11 @@ export function useElevenLabs() {
 
           addLog(`Research complete: ${results.length} sources, script ready.`, 'success');
 
-          setSearchResults(results);
-          setTendencies(tendenciesArr);
-          setBiases(biasesArr);
+          setResearchData({
+            results,
+            tendencies: tendenciesArr,
+            biases: biasesArr,
+          });
 
           isToolRunning.current = false;
           setState('SPEAKING');

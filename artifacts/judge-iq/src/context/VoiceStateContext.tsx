@@ -16,6 +16,12 @@ export interface TranscriptEntry {
   timestamp: Date;
 }
 
+interface ResearchData {
+  results: FirecrawlResult[];
+  tendencies: string[];
+  biases: string[];
+}
+
 interface VoiceStateContextType {
   state: VoiceState;
   logs: LogEntry[];
@@ -29,6 +35,7 @@ interface VoiceStateContextType {
   setSearchResults: (results: FirecrawlResult[]) => void;
   setTendencies: (tendencies: string[]) => void;
   setBiases: (biases: string[]) => void;
+  setResearchData: (data: ResearchData) => void;
   addTranscript: (role: TranscriptEntry['role'], message: string) => void;
   reset: () => void;
 }
@@ -79,6 +86,13 @@ export function VoiceStateProvider({ children }: { children: ReactNode }) {
     setBiasesRaw(items);
   }, []);
 
+  const setResearchData = useCallback((data: ResearchData) => {
+    setSearchResultsRaw(data.results);
+    setTendenciesRaw(data.tendencies);
+    setBiasesRaw(data.biases);
+    setHasResults(true);
+  }, []);
+
   const reset = useCallback(() => {
     setState('IDLE');
     setSearchResultsRaw([]);
@@ -126,6 +140,7 @@ export function VoiceStateProvider({ children }: { children: ReactNode }) {
       setSearchResults,
       setTendencies,
       setBiases,
+      setResearchData,
       addTranscript,
       reset,
     }}>
