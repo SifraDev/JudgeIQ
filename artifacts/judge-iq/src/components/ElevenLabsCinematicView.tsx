@@ -3,19 +3,16 @@ import { AnimatePresence } from 'framer-motion';
 import { useVoiceState } from '@/context/VoiceStateContext';
 import { useElevenLabsSession } from '@/components/ElevenLabsSession';
 import { IdleView } from '@/components/views/IdleView';
+import { ConnectedView } from '@/components/views/ConnectedView';
 import { ProcessingView } from '@/components/views/ProcessingView';
 import { ResultsView } from '@/components/views/ResultsView';
 import { DevStateToggle } from '@/components/DevStateToggle';
 import { DevConsole } from '@/components/DevConsole';
 
 function getView(state: string, hasResults: boolean) {
-  // Si está buscando en Firecrawl, muestra el fuego
   if (state === 'PROCESSING') return 'processing';
-
-  // SOLO ve a resultados si Firecrawl ya trajo la data real
   if (hasResults) return 'results';
-
-  // Para cualquier otra cosa (saludar, escuchar tu voz, estar inactivo), quédate en el orbe inicial
+  if (state === 'LISTENING' || state === 'SPEAKING') return 'connected';
   return 'idle';
 }
 
@@ -61,6 +58,7 @@ export function ElevenLabsCinematicView() {
           {currentView === 'idle' && (
             <IdleView key="idle" onStart={handleReconnect} isReconnect={isReconnect} />
           )}
+          {currentView === 'connected' && <ConnectedView key="connected" />}
           {currentView === 'processing' && <ProcessingView key="processing" />}
           {currentView === 'results' && <ResultsView key="results" />}
         </AnimatePresence>

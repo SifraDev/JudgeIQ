@@ -62,7 +62,9 @@ export function IdleView({ onStart, isReconnect = false }: IdleViewProps) {
                 : 'text-muted-foreground'
           }`}
         >
-          {localState === 'LISTENING' ? 'Reconnecting...' : idleLabel}
+          {localState === 'LISTENING'
+            ? (isReconnect ? 'Reconnecting...' : 'Connecting...')
+            : idleLabel}
         </motion.p>
       </motion.div>
     </motion.div>
