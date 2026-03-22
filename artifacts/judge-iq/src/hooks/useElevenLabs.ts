@@ -118,7 +118,7 @@ export function useElevenLabs() {
     try {
       await conversation.endSession();
     } catch (e) {
-      // ignore
+      console.warn('[ElevenLabs] Session teardown error:', e);
     }
     setState('IDLE');
   }, [conversation, addLog, setState]);
