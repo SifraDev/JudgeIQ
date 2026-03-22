@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Flame } from 'lucide-react';
+import { Flame } from 'lucide-react';
 import type { VoiceState } from '@/context/VoiceStateContext';
 
 interface CSSorbProps {
@@ -9,9 +9,9 @@ interface CSSorbProps {
 }
 
 const sizes = {
-  sm: { container: 'w-14 h-14', icon: 'w-5 h-5', flame: 'w-6 h-6', ring: '-m-2', glow: '-m-3' },
-  md: { container: 'w-40 h-40', icon: 'w-10 h-10', flame: 'w-14 h-14', ring: '-m-6', glow: '-m-8' },
-  lg: { container: 'w-72 h-72 md:w-80 md:h-80', icon: 'w-16 h-16', flame: 'w-24 h-24', ring: '-m-10', glow: '-m-12' },
+  sm: { container: 'w-12 h-12', flame: 'w-5 h-5', ring: '-m-2', glow: '-m-3' },
+  md: { container: 'w-24 h-24', flame: 'w-10 h-10', ring: '-m-4', glow: '-m-6' },
+  lg: { container: 'w-48 h-48 md:w-56 md:h-56', flame: 'w-16 h-16', ring: '-m-8', glow: '-m-10' },
 };
 
 export function CSSOrb({ state, size = 'md' }: CSSorbProps) {
@@ -87,32 +87,61 @@ export function CSSOrb({ state, size = 'md' }: CSSorbProps) {
           >
             <motion.div
               className={`absolute inset-0 rounded-full ${s.glow}`}
-              style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.25) 0%, transparent 70%)' }}
+              style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.2) 0%, transparent 70%)' }}
               animate={{
-                scale: isActive ? [1, 1.3, 1] : 1,
-                opacity: isActive ? [0.3, 0.6, 0.3] : 0.2,
+                scale: isActive ? [1, 1.3, 1] : [1, 1.08, 1],
+                opacity: isActive ? [0.3, 0.6, 0.3] : [0.15, 0.25, 0.15],
               }}
-              transition={{ duration: isActive ? 1.5 : 3, repeat: Infinity, ease: "easeInOut" }}
+              transition={{ duration: isActive ? 1.5 : 4, repeat: Infinity, ease: "easeInOut" }}
             />
 
             <motion.div
-              className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-800 via-gray-900 to-black border border-white/10"
+              className="absolute inset-0 rounded-full overflow-hidden"
               animate={{
                 boxShadow: isActive
                   ? [
-                      'inset 0 0 20px rgba(212,175,55,0.3), 0 0 30px rgba(212,175,55,0.15)',
-                      'inset 0 0 30px rgba(212,175,55,0.5), 0 0 50px rgba(212,175,55,0.3)',
-                      'inset 0 0 20px rgba(212,175,55,0.3), 0 0 30px rgba(212,175,55,0.15)',
+                      '0 0 30px rgba(212,175,55,0.15), inset 0 0 20px rgba(212,175,55,0.2)',
+                      '0 0 50px rgba(212,175,55,0.3), inset 0 0 30px rgba(212,175,55,0.35)',
+                      '0 0 30px rgba(212,175,55,0.15), inset 0 0 20px rgba(212,175,55,0.2)',
                     ]
-                  : 'inset 0 -8px 20px rgba(0,0,0,0.8), 0 0 40px rgba(212,175,55,0.08)',
-                borderColor: isActive ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.1)',
+                  : '0 0 20px rgba(212,175,55,0.06), inset 0 0 15px rgba(0,0,0,0.5)',
+                borderColor: isActive ? 'rgba(212,175,55,0.25)' : 'rgba(255,255,255,0.08)',
               }}
               transition={{
-                duration: state === 'SPEAKING' ? 0.8 : 2,
+                duration: state === 'SPEAKING' ? 0.8 : 2.5,
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-            />
+              style={{
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'radial-gradient(ellipse at 30% 25%, rgba(255,255,255,0.12) 0%, transparent 50%), radial-gradient(ellipse at 70% 75%, rgba(0,0,0,0.4) 0%, transparent 50%), linear-gradient(135deg, #2a2d35 0%, #1a1c22 40%, #0d0e12 100%)',
+              }}
+            >
+              <div
+                className="absolute rounded-full"
+                style={{
+                  top: '12%',
+                  left: '18%',
+                  width: '35%',
+                  height: '25%',
+                  background: 'radial-gradient(ellipse, rgba(255,255,255,0.15) 0%, transparent 70%)',
+                  filter: 'blur(4px)',
+                  transform: 'rotate(-20deg)',
+                }}
+              />
+              <div
+                className="absolute rounded-full"
+                style={{
+                  top: '15%',
+                  left: '22%',
+                  width: '18%',
+                  height: '12%',
+                  background: 'radial-gradient(ellipse, rgba(255,255,255,0.25) 0%, transparent 70%)',
+                  filter: 'blur(2px)',
+                  transform: 'rotate(-15deg)',
+                }}
+              />
+            </motion.div>
 
             {isActive && (
               <>
@@ -135,14 +164,6 @@ export function CSSOrb({ state, size = 'md' }: CSSorbProps) {
                 )}
               </>
             )}
-
-            <motion.div
-              className="relative z-10"
-              animate={isActive ? { scale: [1, 1.1, 1] } : {}}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <Mic className={`${s.icon} ${isActive ? 'text-primary' : 'text-white/40'} transition-colors duration-500`} />
-            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

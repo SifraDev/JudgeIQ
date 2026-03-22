@@ -42,14 +42,6 @@ export function IdleView({ onStart }: IdleViewProps) {
         onClick={onStart}
       >
         <CSSOrb state="IDLE" size="md" />
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="text-center mt-8 text-sm text-muted-foreground font-display tracking-wider"
-        >
-          Tap to Start
-        </motion.p>
       </motion.div>
 
       {!AGENT_ID && (
