@@ -117,7 +117,7 @@ export function useElevenLabs() {
           });
           if (!crawlRes.ok) throw new Error(`Firecrawl HTTP ${crawlRes.status}`);
           const crawlData = await crawlRes.json();
-          const results = Array.isArray(crawlData?.results) ? crawlData.results : [];
+          const results = Array.isArray(crawlData?.results) ? crawlData.results : (Array.isArray(crawlData?.data) ? crawlData.data : []);
           const crawlTime = ((performance.now() - t0) / 1000).toFixed(1);
           addLog(`Firecrawl extraction complete in ${crawlTime}s (${results.length} sources)`, 'success');
 
