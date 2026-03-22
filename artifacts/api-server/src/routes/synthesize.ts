@@ -54,18 +54,18 @@ router.post("/synthesize", async (req, res) => {
     } catch {
       req.log.error({ rawContent: rawContent.slice(0, 200) }, "Synthesize: failed to parse OpenAI JSON");
       synthesized = {
-        spoken_script: `I have compiled the research on Judge ${query}, but encountered an issue synthesizing the details. I've populated the dashboard. What specific area would you like to explore?`,
+        spoken_script: `I have compiled the research on Judge ${query}, but encountered an issue synthesizing the details.`,
         tendencies: ["Data synthesis error"],
         biases: ["Unable to determine"],
       };
     }
 
-    let spoken_script = synthesized.spoken_script || `I have compiled the research on Judge ${query}. I've populated the dashboard. What specific area would you like to explore?`;
-
-    const sentences = spoken_script.split(/(?<=[.!?])\s+/).filter((s) => s.length > 0);
-    if (sentences.length > 4) {
-      spoken_script = sentences.slice(0, 4).join(" ");
-    }
+    const rawScript = synthesized.spoken_script || "";
+    const sentences = rawScript.split(/(?<=[.!?])\s+/).filter((s) => s.length > 0);
+    const contentSentences = sentences.slice(0, 2).join(" ");
+    const spoken_script = contentSentences
+      ? `${contentSentences} I've populated the dashboard. What specific area would you like to explore?`
+      : `I have compiled the research on Judge ${query}. I've populated the dashboard. What specific area would you like to explore?`;
 
     const rawTendencies = Array.isArray(synthesized.tendencies) ? synthesized.tendencies : [];
     const tendencies = [
