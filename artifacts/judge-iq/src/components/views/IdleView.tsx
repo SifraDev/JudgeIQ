@@ -1,21 +1,14 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { CSSOrb } from '@/components/CSSOrb';
-import { useVoiceState } from '@/context/VoiceStateContext';
 
 const AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID || '';
 
 interface IdleViewProps {
   onStart: () => void;
-  connectionError?: string | null;
 }
 
-export function IdleView({ onStart, connectionError }: IdleViewProps) {
-  const { state } = useVoiceState();
-  const isListening = state === 'LISTENING';
-  const isSpeaking = state === 'SPEAKING';
-  const isActive = isListening || isSpeaking;
-
+export function IdleView({ onStart }: IdleViewProps) {
   return (
     <motion.div
       key="idle-view"
@@ -48,49 +41,23 @@ export function IdleView({ onStart, connectionError }: IdleViewProps) {
         className="relative cursor-pointer"
         onClick={onStart}
       >
-        <CSSOrb state={state} size="md" />
+        <CSSOrb state="IDLE" size="md" />
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="text-center mt-8 text-sm text-muted-foreground font-display tracking-wider"
+        >
+          Tap to Start
+        </motion.p>
       </motion.div>
-
-      <div className="h-10 mt-4 flex flex-col items-center justify-center gap-1">
-        <AnimatePresence>
-          {isActive && (
-            <motion.span
-              key="state-label"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: [0.5, 0.9, 0.5] }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{
-                opacity: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
-                y: { duration: 0.3 },
-              }}
-              className="text-xs text-blue-300/70 uppercase tracking-[0.2em] font-display"
-            >
-              {isSpeaking ? 'Speaking...' : 'Listening...'}
-            </motion.span>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {connectionError && (
-            <motion.span
-              key="error"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="text-[11px] text-red-400/80 max-w-sm text-center px-4"
-            >
-              {connectionError}
-            </motion.span>
-          )}
-        </AnimatePresence>
-      </div>
 
       {!AGENT_ID && (
         <motion.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
-          className="mt-4 text-[10px] text-muted-foreground uppercase tracking-wider"
+          className="mt-8 text-[10px] text-muted-foreground uppercase tracking-wider"
         >
           Dev Mode — Use toggles to simulate states
         </motion.span>

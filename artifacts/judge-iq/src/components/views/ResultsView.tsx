@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useVoiceState } from '@/context/VoiceStateContext';
 import { Citations } from '@/components/Citations';
 import { CSSOrb } from '@/components/CSSOrb';
@@ -113,11 +113,7 @@ export function ResultsView() {
 
 function FloatingOrb() {
   const { state } = useVoiceState();
-  const isListening = state === 'LISTENING';
-  const isSpeaking = state === 'SPEAKING';
-  const isActive = isListening || isSpeaking;
-
-  const label = isSpeaking ? 'Speaking...' : isListening ? 'Listening...' : '';
+  const isActive = state === 'SPEAKING' || state === 'LISTENING';
 
   return (
     <motion.div
@@ -135,20 +131,14 @@ function FloatingOrb() {
             transition={{ duration: 1, repeat: Infinity }}
           />
         )}
-        <AnimatePresence>
-          {isActive && (
-            <motion.span
-              key="orb-label"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [0.4, 0.8, 0.4] }}
-              exit={{ opacity: 0 }}
-              transition={{ opacity: { duration: 2, repeat: Infinity, ease: "easeInOut" } }}
-              className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-blue-300/60 uppercase tracking-[0.15em] whitespace-nowrap font-display"
-            >
-              {label}
-            </motion.span>
-          )}
-        </AnimatePresence>
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+          className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-primary/60 uppercase tracking-wider whitespace-nowrap font-mono"
+        >
+          {isActive ? 'Active' : 'Ready'}
+        </motion.span>
       </div>
     </motion.div>
   );

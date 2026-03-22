@@ -67,9 +67,7 @@ artifacts-monorepo/
 - `DevConsole.tsx` — Phase 1 manual webhook testing (bottom bar)
 - `Citations.tsx` — Grid of source citations from Firecrawl results
 - `VoiceStateContext.tsx` — Central state machine for voice states, logs, transcript, and search results
-- `ElevenLabsSession.tsx` — Session provider + hook for production ElevenLabs voice (context wrapper around `useElevenLabs`)
-- `useElevenLabs.ts` — Phase 3 hook wrapping `@elevenlabs/react` with `firecrawl_search` client tool
-- `Home.tsx` — Main page with `ElevenLabsErrorBoundary` (catches WebRTC failures), shared `CinematicShell` for both production and dev paths
+- `useElevenLabs.ts` — Phase 3 dormant hook wrapping `@elevenlabs/react`
 
 ### UI Design
 
@@ -81,7 +79,7 @@ artifacts-monorepo/
 ### Environment Variables
 
 - `FIRECRAWL_API_KEY` — Required for backend Firecrawl searches (set)
-- `VITE_ELEVENLABS_AGENT_ID` — Optional; enables Phase 3 real voice (set). When set, `Home.tsx` wraps the production session in an `ElevenLabsErrorBoundary` that falls back to dev mode if `useConversation` fails (e.g. in environments without WebRTC like Replit iframe).
+- `VITE_ELEVENLABS_AGENT_ID` — Optional; enables Phase 3 real voice (not set yet)
 
 ## TypeScript & Composite Projects
 

@@ -6,7 +6,6 @@ interface ElevenLabsSessionContextType {
   stop: () => Promise<void>;
   status: string;
   isSpeaking: boolean;
-  connectionError: string | null;
 }
 
 const ElevenLabsSessionContext = createContext<ElevenLabsSessionContextType | null>(null);

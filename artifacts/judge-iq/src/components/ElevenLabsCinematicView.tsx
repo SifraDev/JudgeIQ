@@ -1,21 +1,12 @@
-import React, { Suspense, lazy, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useVoiceState } from '@/context/VoiceStateContext';
+import { useElevenLabsSession } from '@/components/ElevenLabsSession';
 import { IdleView } from '@/components/views/IdleView';
 import { ProcessingView } from '@/components/views/ProcessingView';
 import { ResultsView } from '@/components/views/ResultsView';
 import { DevStateToggle } from '@/components/DevStateToggle';
 import { DevConsole } from '@/components/DevConsole';
-
-const AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID || '';
-
-const ElevenLabsSessionProvider = AGENT_ID
-  ? lazy(() => import('@/components/ElevenLabsSession').then(m => ({ default: m.ElevenLabsSessionProvider })))
-  : null;
-
-const ElevenLabsCinematicView = AGENT_ID
-  ? lazy(() => import('@/components/ElevenLabsCinematicView').then(m => ({ default: m.ElevenLabsCinematicView })))
-  : null;
 
 function getView(state: string, hasResults: boolean) {
   if (state === 'PROCESSING') return 'processing';
@@ -24,12 +15,13 @@ function getView(state: string, hasResults: boolean) {
   return 'idle';
 }
 
-function DevCinematicView() {
-  const { state, setState, hasResults } = useVoiceState();
+export function ElevenLabsCinematicView() {
+  const { state, hasResults } = useVoiceState();
+  const { start } = useElevenLabsSession();
 
   const handleStart = useCallback(() => {
-    setState('LISTENING');
-  }, [setState]);
+    start();
+  }, [start]);
 
   const currentView = getView(state, hasResults);
 
@@ -56,17 +48,4 @@ function DevCinematicView() {
       <DevConsole />
     </div>
   );
-}
-
-export default function Home() {
-  if (ElevenLabsSessionProvider && ElevenLabsCinematicView) {
-    return (
-      <Suspense fallback={<DevCinematicView />}>
-        <ElevenLabsSessionProvider>
-          <ElevenLabsCinematicView />
-        </ElevenLabsSessionProvider>
-      </Suspense>
-    );
-  }
-  return <DevCinematicView />;
 }

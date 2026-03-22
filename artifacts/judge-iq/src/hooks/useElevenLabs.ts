@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import { useConversation } from '@elevenlabs/react';
 import type { Mode } from '@elevenlabs/react';
 import { useVoiceState } from '@/context/VoiceStateContext';
@@ -13,16 +13,14 @@ interface SearchParameters {
 export function useElevenLabs() {
   const { setState, addLog, setSearchResults, addTranscript } = useVoiceState();
   const isToolRunning = useRef(false);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const conversation = useConversation({
     onConnect: () => {
-      setConnectionError(null);
-      addLog('Connected to ElevenLabs agent.', 'success');
+      addLog('Connected to ElevenAgents.', 'success');
       setState('LISTENING');
     },
     onDisconnect: () => {
-      addLog('Disconnected from ElevenLabs agent.', 'system');
+      addLog('Disconnected from ElevenAgents.', 'system');
       setState('IDLE');
       isToolRunning.current = false;
     },
@@ -35,27 +33,25 @@ export function useElevenLabs() {
       }
     },
     onError: (message) => {
-      const errorStr = typeof message === 'string' ? message : JSON.stringify(message);
-      addLog(`ElevenLabs error: ${errorStr}`, 'error');
-      setConnectionError(errorStr);
+      addLog(`ElevenAgents error: ${message}`, 'error');
       setState('IDLE');
     },
     onModeChange: (prop: { mode: Mode }) => {
       if (prop.mode === 'speaking') {
         if (isToolRunning.current) {
-          addLog('Firecrawl data received. Agent synthesizing profile...', 'success');
+          addLog('Extracted documents successfully. Synthesizing...', 'success');
           isToolRunning.current = false;
         }
         setState('SPEAKING');
       } else if (prop.mode === 'listening') {
         setState('LISTENING');
-        addLog('Listening...', 'info');
+        addLog('Listening to voice input...', 'info');
       }
     },
     clientTools: {
       firecrawl_search: async (parameters: SearchParameters): Promise<string> => {
         const query = parameters.query || parameters.judge_name || '';
-        addLog(`Searching for "${query}" via Firecrawl...`, 'warning');
+        addLog(`Triggering Firecrawl Search Tool for "${query}"...`, 'warning');
         setState('PROCESSING');
         isToolRunning.current = true;
 
@@ -83,43 +79,22 @@ export function useElevenLabs() {
 
   const start = useCallback(async () => {
     if (!AGENT_ID) {
-      addLog('No ElevenLabs Agent ID configured.', 'error');
-      setConnectionError('VITE_ELEVENLABS_AGENT_ID is not set.');
+      addLog('VITE_ELEVENLABS_AGENT_ID not configured. Set this env var to enable voice.', 'error');
       return;
     }
-
-    setConnectionError(null);
-    addLog('Requesting microphone access...', 'system');
-
+    addLog('Connecting to ElevenAgents...', 'system');
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
-      addLog('Microphone granted. Connecting to ElevenLabs...', 'system');
+      await conversation.startSession({ agentId: AGENT_ID, connectionType: 'webrtc' as const });
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
-      addLog(`Microphone access denied: ${msg}`, 'error');
-      setConnectionError(`Microphone access denied. Please allow microphone access and try again.`);
-      return;
-    }
-
-    try {
-      await conversation.startSession({
-        agentId: AGENT_ID,
-        connectionType: 'webrtc',
-      });
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      addLog(`Failed to connect: ${msg}`, 'error');
-      setConnectionError(`Connection failed: ${msg}`);
+      addLog(`Failed to start session: ${msg}`, 'error');
     }
   }, [conversation, addLog]);
 
   const stop = useCallback(async () => {
     addLog('Ending session...', 'system');
-    try {
-      await conversation.endSession();
-    } catch (e) {
-      console.warn('[ElevenLabs] Session teardown error:', e);
-    }
+    await conversation.endSession();
     setState('IDLE');
   }, [conversation, addLog, setState]);
 
@@ -128,6 +103,5 @@ export function useElevenLabs() {
     stop,
     status: conversation.status,
     isSpeaking: conversation.isSpeaking,
-    connectionError,
   };
 }
