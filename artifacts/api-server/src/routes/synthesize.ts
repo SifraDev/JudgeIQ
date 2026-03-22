@@ -10,7 +10,7 @@ interface SynthesizeInput {
 
 const SYSTEM_PROMPT = `You are a legal research assistant. Given raw scraped data about a judge, produce a structured JSON object with exactly these three keys:
 
-1. "spoken_script": A very short, highly conversational assistant response (max 2 sentences). Format it EXACTLY like this: "I have compiled the research on Judge [Full Name]. [One punchy, interesting key insight about them]. What specific area of their record would you like to explore?"
+1. "spoken_script": A very short, highly conversational assistant response (max 2 sentences). Format it EXACTLY like this: "I have compiled the research on Judge [Full Name]. [One punchy, interesting key insight about them]. I've populated the dashboard. What specific area would you like to explore?"
 
 2. "tendencies": An array of exactly 3 short strings (each under 15 words) describing the judge's courtroom tendencies, procedural preferences, or case management style.
 
@@ -54,13 +54,18 @@ router.post("/synthesize", async (req, res) => {
     } catch {
       req.log.error({ rawContent: rawContent.slice(0, 200) }, "Synthesize: failed to parse OpenAI JSON");
       synthesized = {
-        spoken_script: `I have compiled the research on Judge ${query}, but encountered an issue synthesizing the details. What specific area would you like to explore?`,
+        spoken_script: `I have compiled the research on Judge ${query}, but encountered an issue synthesizing the details. I've populated the dashboard. What specific area would you like to explore?`,
         tendencies: ["Data synthesis error"],
         biases: ["Unable to determine"],
       };
     }
 
-    const spoken_script = synthesized.spoken_script || `I have compiled the research on Judge ${query}, but details were limited. What specific area would you like to explore?`;
+    let spoken_script = synthesized.spoken_script || `I have compiled the research on Judge ${query}. I've populated the dashboard. What specific area would you like to explore?`;
+
+    const sentences = spoken_script.split(/(?<=[.!?])\s+/).filter((s) => s.length > 0);
+    if (sentences.length > 4) {
+      spoken_script = sentences.slice(0, 4).join(" ");
+    }
 
     const rawTendencies = Array.isArray(synthesized.tendencies) ? synthesized.tendencies : [];
     const tendencies = [
