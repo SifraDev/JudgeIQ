@@ -9,7 +9,7 @@ import html2pdf from 'html2pdf.js';
 import { useElevenLabsSession } from '@/components/ElevenLabsSession';
 
 export function ResultsView() {
-  const { searchResults, transcript, state } = useVoiceState();
+  const { searchResults, transcript, tendencies, biases, state } = useVoiceState();
   const contentRef = useRef<HTMLDivElement>(null);
 
   // --- 1. LÓGICA DINÁMICA DE DATOS ---
@@ -27,12 +27,17 @@ export function ResultsView() {
     ? agentText 
     : "Analyzing judicial records and synthesizing profile... Please wait for the agent to finish speaking.";
 
-  // Para el hackathon, si el agente no da viñetas específicas, mostramos placeholders inteligentes basados en el nombre
-  const dynamicTendencies = [
-    `Analyzing recent rulings by ${judgeName} for procedural patterns.`,
-    "Evaluating typical courtroom management style.",
-    "Cross-referencing historical case outcomes."
-  ];
+  const dynamicTendencies = tendencies.length > 0
+    ? tendencies
+    : [
+        `Analyzing recent rulings by ${judgeName} for procedural patterns.`,
+        "Evaluating typical courtroom management style.",
+        "Cross-referencing historical case outcomes.",
+      ];
+
+  const dynamicBiases = biases.length > 0
+    ? biases
+    : ["Awaiting deeper semantic analysis from judicial records..."];
 
   const handleExportPDF = () => {
     if (!contentRef.current) return;
@@ -136,10 +141,11 @@ export function ResultsView() {
               <Fingerprint className="w-4 h-4" /> Known Biases & Inclinations
             </h3>
             <ul className="space-y-3">
-               <li className="text-sm text-gray-300 flex items-start gap-2">
-                  <span className="text-red-500 mt-0.5">•</span> 
-                  Awaiting deeper semantic analysis from judicial records...
+              {dynamicBiases.map((item, idx) => (
+                <li key={idx} className="text-sm text-gray-300 flex items-start gap-2">
+                  <span className="text-red-500 mt-0.5">•</span> {item}
                 </li>
+              ))}
             </ul>
           </motion.div>
         </motion.div>

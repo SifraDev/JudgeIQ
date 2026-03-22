@@ -23,7 +23,7 @@ async function getSignedUrl(): Promise<string | null> {
 }
 
 export function useElevenLabs() {
-  const { setState, addLog, setSearchResults, addTranscript } = useVoiceState();
+  const { setState, addLog, setSearchResults, setTendencies, setBiases, addTranscript } = useVoiceState();
   const isToolRunning = useRef(false);
   const retryCount = useRef(0);
   const isRetrying = useRef(false);
@@ -102,14 +102,13 @@ export function useElevenLabs() {
       firecrawl_search: async (parameters: SearchParameters): Promise<string> => {
         try {
           const query = parameters?.query || parameters?.judge_name || '';
-          addLog(`Triggering Firecrawl Search Tool for "${query}"...`, 'warning');
+          addLog(`Researching "${query}"...`, 'warning');
 
-          // 1. FORZAMOS EL ESTADO A PROCESAMIENTO
           isToolRunning.current = true;
           setState('PROCESSING');
 
           const baseUrl = (import.meta.env.BASE_URL as string || '').replace(/\/$/, '');
-          const response = await fetch(`${baseUrl}/api/firecrawl/search`, {
+          const response = await fetch(`${baseUrl}/api/research`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query }),
@@ -119,22 +118,26 @@ export function useElevenLabs() {
 
           const data = await response.json();
           const results = Array.isArray(data?.results) ? data.results : [];
-          addLog(`Firecrawl returned ${results.length} documents.`, 'success');
+          const spokenScript = data?.spoken_script || '';
+          const tendenciesArr = Array.isArray(data?.tendencies) ? data.tendencies : [];
+          const biasesArr = Array.isArray(data?.biases) ? data.biases : [];
 
-          // 2. DISPARAMOS LOS RESULTADOS AL DASHBOARD
+          addLog(`Research complete: ${results.length} sources, script ready.`, 'success');
+
           setSearchResults(results);
+          setTendencies(tendenciesArr);
+          setBiases(biasesArr);
 
-          // 3. LIBERAMOS EL CANDADO Y PREPARAMOS A VICTORIA PARA HABLAR LOS RESULTADOS
           isToolRunning.current = false;
           setState('SPEAKING');
 
-          return JSON.stringify(data);
+          return spokenScript;
         } catch (error: any) {
           isToolRunning.current = false;
-          setState('SPEAKING'); // Para que la UI se recupere y ella pida disculpas
+          setState('SPEAKING');
           const msg = error instanceof Error ? error.message : String(error);
-          addLog(`Firecrawl search failed: ${msg}`, 'error');
-          return JSON.stringify({ error: msg, success: false, results: [] });
+          addLog(`Research failed: ${msg}`, 'error');
+          return `I was unable to complete the research. ${msg}`;
         }
       },
     },

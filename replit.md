@@ -42,7 +42,7 @@ artifacts-monorepo/
 
 ### Architecture
 
-- **Backend** (`artifacts/api-server`): Pure Firecrawl passthrough webhook at `POST /api/firecrawl/search` with `scrapeOptions: { formats: ["markdown"] }`. No LLM on backend — ElevenAgents is the reasoning brain.
+- **Backend** (`artifacts/api-server`): Firecrawl webhook at `POST /api/firecrawl/search` (raw passthrough) and `POST /api/research` (LLM-synthesized). The research endpoint runs Firecrawl search then passes raw markdown to OpenAI gpt-4o-mini via Replit AI Integrations to produce structured JSON: `spoken_script` (~40s narration), `tendencies` (3 items), `biases` (2 items). Uses `@workspace/integrations-openai-ai-server` for OpenAI client.
 - **Frontend** (`artifacts/judge-iq`): React+Vite SPA with cinematic 3-state flow. No React Router navigation — views swap via conditional rendering with Framer Motion `AnimatePresence`.
 - **ElevenAgents Integration** (`src/hooks/useElevenLabs.ts`): Dormant Phase 3 hook using `@elevenlabs/react`. Activated by setting `VITE_ELEVENLABS_AGENT_ID` env var. Registers `firecrawl_search` as a client tool.
 
@@ -79,7 +79,10 @@ artifacts-monorepo/
 ### Environment Variables
 
 - `FIRECRAWL_API_KEY` — Required for backend Firecrawl searches (set)
-- `VITE_ELEVENLABS_AGENT_ID` — Optional; enables Phase 3 real voice (not set yet)
+- `VITE_ELEVENLABS_AGENT_ID` — ElevenLabs agent ID for voice (set)
+- `ELEVENLABS_API_KEY` — ElevenLabs API key for signed WebSocket URLs (set)
+- `AI_INTEGRATIONS_OPENAI_BASE_URL` — Auto-provisioned by Replit AI Integrations (set)
+- `AI_INTEGRATIONS_OPENAI_API_KEY` — Auto-provisioned by Replit AI Integrations (set)
 
 ## TypeScript & Composite Projects
 
@@ -102,8 +105,8 @@ Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` 
 
 - Entry: `src/index.ts` — reads `PORT`, starts Express
 - App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/firecrawl.ts` exposes `POST /firecrawl/search` (full path: `/api/firecrawl/search`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`, `@mendable/firecrawl-js`
+- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/firecrawl.ts` exposes `POST /firecrawl/search`; `src/routes/research.ts` exposes `POST /research` (Firecrawl + OpenAI synthesis); `src/routes/elevenlabs.ts` exposes `GET /elevenlabs/signed-url`
+- Depends on: `@workspace/db`, `@workspace/api-zod`, `@mendable/firecrawl-js`, `@workspace/integrations-openai-ai-server`
 
 ### `artifacts/judge-iq` (`@workspace/judge-iq`)
 

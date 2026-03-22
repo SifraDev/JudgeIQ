@@ -21,10 +21,14 @@ interface VoiceStateContextType {
   logs: LogEntry[];
   searchResults: FirecrawlResult[];
   transcript: TranscriptEntry[];
+  tendencies: string[];
+  biases: string[];
   hasResults: boolean;
   setState: (state: VoiceState) => void;
   addLog: (message: string, type?: LogEntry['type']) => void;
   setSearchResults: (results: FirecrawlResult[]) => void;
+  setTendencies: (tendencies: string[]) => void;
+  setBiases: (biases: string[]) => void;
   addTranscript: (role: TranscriptEntry['role'], message: string) => void;
   reset: () => void;
 }
@@ -35,6 +39,8 @@ export function VoiceStateProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<VoiceState>('IDLE');
   const [searchResults, setSearchResultsRaw] = useState<FirecrawlResult[]>([]);
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
+  const [tendencies, setTendenciesRaw] = useState<string[]>([]);
+  const [biases, setBiasesRaw] = useState<string[]>([]);
   const [hasResults, setHasResults] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([
     {
@@ -65,10 +71,20 @@ export function VoiceStateProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const setTendencies = useCallback((items: string[]) => {
+    setTendenciesRaw(items);
+  }, []);
+
+  const setBiases = useCallback((items: string[]) => {
+    setBiasesRaw(items);
+  }, []);
+
   const reset = useCallback(() => {
     setState('IDLE');
     setSearchResultsRaw([]);
     setTranscript([]);
+    setTendenciesRaw([]);
+    setBiasesRaw([]);
     setHasResults(false);
     setLogs([{
       id: Math.random().toString(36).substring(7),
@@ -102,10 +118,14 @@ export function VoiceStateProvider({ children }: { children: ReactNode }) {
       logs,
       searchResults,
       transcript,
+      tendencies,
+      biases,
       hasResults,
       setState: setVoiceState,
       addLog,
       setSearchResults,
+      setTendencies,
+      setBiases,
       addTranscript,
       reset,
     }}>
