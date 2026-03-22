@@ -14,252 +14,130 @@ const sizes = {
   lg: { px: 200, flame: 'w-16 h-16' },
 };
 
-const CONIC_IDLE = `conic-gradient(
-  from 180deg at 45% 52%,
-  hsl(200, 35%, 28%) 0deg,
-  hsl(210, 40%, 25%) 35deg,
-  hsl(220, 35%, 30%) 70deg,
-  hsl(240, 25%, 32%) 110deg,
-  hsl(270, 20%, 30%) 140deg,
-  hsl(250, 25%, 28%) 165deg,
-  hsl(230, 30%, 30%) 195deg,
-  hsl(215, 35%, 27%) 225deg,
-  hsl(205, 40%, 28%) 260deg,
-  hsl(195, 35%, 30%) 295deg,
-  hsl(200, 30%, 32%) 330deg,
-  hsl(200, 35%, 28%) 360deg
-)`;
-
-const CONIC_ACTIVE = `conic-gradient(
-  from 180deg at 45% 52%,
-  hsl(195, 60%, 45%) 0deg,
-  hsl(205, 65%, 40%) 35deg,
-  hsl(220, 55%, 45%) 70deg,
-  hsl(245, 40%, 48%) 110deg,
-  hsl(280, 35%, 45%) 140deg,
-  hsl(310, 45%, 42%) 165deg,
-  hsl(270, 30%, 46%) 195deg,
-  hsl(245, 35%, 44%) 225deg,
-  hsl(215, 55%, 40%) 260deg,
-  hsl(200, 65%, 42%) 295deg,
-  hsl(190, 55%, 48%) 330deg,
-  hsl(195, 60%, 45%) 360deg
-)`;
-
 export function CSSOrb({ state, size = 'md' }: CSSorbProps) {
   const s = sizes[size];
   const isProcessing = state === 'PROCESSING';
   const isListening = state === 'LISTENING';
   const isSpeaking = state === 'SPEAKING';
-  const isActive = isListening || isSpeaking;
   const isIdle = state === 'IDLE';
 
   const containerStyle = { width: s.px, height: s.px };
-  const blurBase = Math.max(2, Math.round(s.px * 0.04));
 
-  const CONIC = isActive ? CONIC_ACTIVE : CONIC_IDLE;
-
-  const saturation = isSpeaking
-    ? 'saturate(1.25) brightness(1.15)'
+  const glowColor = isProcessing
+    ? 'rgba(255,100,20,0.4)'
+    : 'rgba(60,100,220,0.35)';
+  const glowPulse = isSpeaking
+    ? { scale: [1, 1.4, 1], opacity: [0.5, 0.9, 0.5] }
     : isListening
-      ? 'saturate(1.1) brightness(1.05)'
-      : 'saturate(0.85) brightness(0.8)';
+      ? { scale: [1, 1.3, 1], opacity: [0.4, 0.8, 0.4] }
+      : isProcessing
+        ? { scale: [1, 1.3, 1], opacity: [0.4, 0.8, 0.4] }
+        : { scale: [1, 1.1, 1], opacity: [0.15, 0.3, 0.15] };
+  const glowDuration = isSpeaking ? 1.0 : isListening ? 1.5 : 2.5;
 
-  const rotationDuration = isSpeaking ? 3 : isListening ? 6 : 20;
+  const sphereBg = isProcessing
+    ? 'bg-gradient-to-br from-orange-950 via-black to-red-950'
+    : isSpeaking
+      ? 'bg-gradient-to-br from-blue-800 via-indigo-950 to-blue-900'
+      : isListening
+        ? 'bg-gradient-to-br from-blue-900 via-slate-950 to-indigo-950'
+        : 'bg-gradient-to-br from-slate-900 via-slate-950 to-gray-900';
+  const sphereBorder = isProcessing
+    ? 'border-orange-500/30'
+    : isSpeaking
+      ? 'border-blue-400/40'
+      : isListening
+        ? 'border-blue-500/30'
+        : 'border-slate-700/20';
+  const sphereShadow = isProcessing
+    ? 'shadow-[0_0_60px_rgba(255,100,20,0.3),inset_0_0_40px_rgba(255,60,0,0.2)]'
+    : isSpeaking
+      ? 'shadow-[0_0_60px_rgba(60,100,255,0.4),inset_0_0_40px_rgba(80,120,255,0.25)]'
+      : isListening
+        ? 'shadow-[0_0_40px_rgba(60,100,220,0.25),inset_0_0_30px_rgba(60,100,200,0.15)]'
+        : 'shadow-[0_0_20px_rgba(40,60,120,0.1),inset_0_0_20px_rgba(30,50,100,0.08)]';
 
-  const glowOpacityRange = isSpeaking
-    ? [0.4, 0.65, 0.4]
-    : isListening
-      ? [0.25, 0.45, 0.25]
-      : [0.08, 0.15, 0.08];
+  const conicGradient = isProcessing
+    ? 'conic-gradient(from 0deg, transparent, rgba(255,100,20,0.3), transparent, rgba(255,60,0,0.2), transparent)'
+    : isSpeaking
+      ? 'conic-gradient(from 0deg, transparent, rgba(80,140,255,0.4), transparent, rgba(100,120,255,0.3), transparent)'
+      : isListening
+        ? 'conic-gradient(from 0deg, transparent, rgba(60,120,220,0.3), transparent, rgba(80,100,200,0.2), transparent)'
+        : 'conic-gradient(from 0deg, transparent, rgba(50,80,150,0.12), transparent, rgba(40,60,120,0.08), transparent)';
+  const rotationDuration = isSpeaking ? 2 : isListening ? 3 : isProcessing ? 3 : 8;
 
-  const glowScaleRange = isSpeaking
-    ? [1.1, 1.25, 1.1]
-    : isListening
-      ? [1.05, 1.15, 1.05]
-      : [1.0, 1.04, 1.0];
+  const ringColor = isProcessing
+    ? { a: 'rgba(255,120,40,0.3)', b: 'rgba(255,100,20,0.2)' }
+    : isSpeaking
+      ? { a: 'rgba(100,160,255,0.4)', b: 'rgba(80,140,255,0.25)' }
+      : isListening
+        ? { a: 'rgba(80,140,220,0.3)', b: 'rgba(60,120,200,0.2)' }
+        : { a: 'rgba(60,100,180,0.08)', b: 'rgba(50,80,150,0.05)' };
+  const ringDuration = isSpeaking ? 1.2 : isListening ? 1.8 : isProcessing ? 2 : 4;
 
-  const breatheDuration = isSpeaking ? 1.2 : isListening ? 2 : 6;
-
-  const breatheScale = isSpeaking
-    ? [1, 1.05, 1]
-    : isListening
-      ? [1, 1.03, 1]
-      : [1, 1.008, 1];
-
-  const specularOpacity = isSpeaking ? 0.35 : isListening ? 0.25 : 0.12;
+  const iconEl = isProcessing ? (
+    <motion.div
+      animate={{
+        scale: [1, 1.15, 1],
+        filter: [
+          'drop-shadow(0 0 12px rgba(255,100,20,0.8))',
+          'drop-shadow(0 0 25px rgba(255,60,0,1))',
+          'drop-shadow(0 0 12px rgba(255,100,20,0.8))',
+        ],
+      }}
+      transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+      className="relative z-10"
+    >
+      <Flame className={`${s.flame} text-orange-400`} strokeWidth={1.5} />
+    </motion.div>
+  ) : null;
 
   return (
     <div className="relative flex items-center justify-center" style={containerStyle}>
-      <AnimatePresence mode="wait">
-        {isProcessing ? (
+      <motion.div
+        key={isProcessing ? 'firecrawl' : 'voice-orb'}
+        initial={{ opacity: 0, scale: 0.6 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.6 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute inset-0 flex items-center justify-center"
+      >
+        <motion.div
+          className="absolute rounded-full"
+          style={{
+            inset: '-20%',
+            background: `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`,
+          }}
+          animate={glowPulse}
+          transition={{ duration: glowDuration, repeat: Infinity, ease: 'easeInOut' }}
+        />
+
+        <div
+          className={`absolute inset-0 rounded-full border ${sphereBg} ${sphereBorder} ${sphereShadow}`}
+        >
           <motion.div
-            key="firecrawl"
-            initial={{ opacity: 0, scale: 0.6, rotate: -20 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            exit={{ opacity: 0, scale: 0.6, rotate: 20 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 flex items-center justify-center"
-          >
-            <motion.div
-              className="absolute rounded-full"
-              style={{ inset: '-20%', background: 'radial-gradient(circle, rgba(255,100,20,0.4) 0%, transparent 70%)' }}
-              animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.8, 0.4] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-orange-950 via-black to-red-950 border border-orange-500/30 shadow-[0_0_60px_rgba(255,100,20,0.3),inset_0_0_40px_rgba(255,60,0,0.2)]">
-              <motion.div
-                className="absolute inset-0 rounded-full"
-                style={{ background: 'conic-gradient(from 0deg, transparent, rgba(255,100,20,0.3), transparent, rgba(255,60,0,0.2), transparent)' }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              />
-            </div>
-            <motion.div
-              animate={{
-                scale: [1, 1.15, 1],
-                filter: ['drop-shadow(0 0 12px rgba(255,100,20,0.8))', 'drop-shadow(0 0 25px rgba(255,60,0,1))', 'drop-shadow(0 0 12px rgba(255,100,20,0.8))'],
-              }}
-              transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-              className="relative z-10"
-            >
-              <Flame className={`${s.flame} text-orange-400`} strokeWidth={1.5} />
-            </motion.div>
-            <motion.div
-              className="absolute inset-0 rounded-full border border-orange-500/20"
-              animate={{ scale: [1, 1.5], opacity: [0.4, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
-            />
-            <motion.div
-              className="absolute inset-0 rounded-full border border-orange-400/15"
-              animate={{ scale: [1, 1.8], opacity: [0.3, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeOut", delay: 0.6 }}
-            />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="voice-orb"
-            initial={{ opacity: 0, scale: 0.6 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.6 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ filter: saturation }}
-          >
-            <motion.div
-              className="absolute rounded-full"
-              style={{
-                inset: '-30%',
-                background: CONIC,
-                filter: `blur(${blurBase * 5}px)`,
-              }}
-              animate={{ opacity: glowOpacityRange, scale: glowScaleRange }}
-              transition={{ duration: breatheDuration, repeat: Infinity, ease: "easeInOut" }}
-            />
+            className="absolute inset-0 rounded-full"
+            style={{ background: conicGradient }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: rotationDuration, repeat: Infinity, ease: 'linear' }}
+          />
+        </div>
 
-            <motion.div
-              className="absolute rounded-full"
-              style={{
-                inset: '-8%',
-                background: CONIC,
-                filter: `blur(${blurBase * 2}px)`,
-              }}
-              animate={{
-                rotate: [0, 360],
-                opacity: isActive ? [0.35, 0.55, 0.35] : [0.15, 0.25, 0.15],
-              }}
-              transition={{
-                rotate: { duration: rotationDuration * 1.3, repeat: Infinity, ease: "linear" },
-                opacity: { duration: breatheDuration, repeat: Infinity, ease: "easeInOut" },
-              }}
-            />
+        {iconEl}
 
-            <motion.div
-              className="absolute inset-0 rounded-full overflow-hidden"
-              style={{ background: CONIC }}
-              animate={{
-                rotate: [0, 360],
-                scale: breatheScale,
-              }}
-              transition={{
-                rotate: { duration: rotationDuration, repeat: Infinity, ease: "linear" },
-                scale: { duration: breatheDuration, repeat: Infinity, ease: "easeInOut" },
-              }}
-            >
-              <motion.div
-                className="absolute inset-0 rounded-full"
-                style={{
-                  background: 'radial-gradient(ellipse at 35% 30%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.1) 35%, transparent 65%)',
-                }}
-                animate={{ opacity: specularOpacity }}
-                transition={{ duration: 0.6, ease: "easeInOut" }}
-              />
-
-              <div
-                className="absolute inset-0 rounded-full"
-                style={{
-                  background: 'radial-gradient(circle at 50% 50%, transparent 55%, rgba(0,0,0,0.15) 100%)',
-                }}
-              />
-            </motion.div>
-
-            {isListening && (
-              <>
-                <motion.div
-                  className="absolute inset-0 rounded-full"
-                  style={{ border: '1.5px solid rgba(120,170,220,0.3)' }}
-                  animate={{ scale: [1, 1.5], opacity: [0.35, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
-                />
-                <motion.div
-                  className="absolute inset-0 rounded-full"
-                  style={{ border: '1px solid rgba(120,170,220,0.2)' }}
-                  animate={{ scale: [1, 1.8], opacity: [0.25, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeOut", delay: 0.6 }}
-                />
-                <motion.div
-                  className="absolute inset-0 rounded-full"
-                  style={{ border: '1px solid rgba(120,170,220,0.1)' }}
-                  animate={{ scale: [1, 2.1], opacity: [0.15, 0] }}
-                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeOut", delay: 1.2 }}
-                />
-              </>
-            )}
-
-            {isSpeaking && (
-              <>
-                <motion.div
-                  className="absolute inset-0 rounded-full"
-                  style={{ border: '2px solid rgba(140,180,220,0.35)' }}
-                  animate={{ scale: [1, 1.6], opacity: [0.4, 0] }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: "easeOut" }}
-                />
-                <motion.div
-                  className="absolute inset-0 rounded-full"
-                  style={{ border: '1.5px solid rgba(140,180,220,0.25)' }}
-                  animate={{ scale: [1, 2.0], opacity: [0.3, 0] }}
-                  transition={{ duration: 1.4, repeat: Infinity, ease: "easeOut", delay: 0.3 }}
-                />
-                <motion.div
-                  className="absolute inset-0 rounded-full"
-                  style={{ border: '1px solid rgba(140,180,220,0.15)' }}
-                  animate={{ scale: [1, 2.4], opacity: [0.2, 0] }}
-                  transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut", delay: 0.6 }}
-                />
-              </>
-            )}
-
-            {isIdle && (
-              <motion.div
-                className="absolute inset-0 rounded-full"
-                style={{ border: '1px solid rgba(100,140,180,0.08)' }}
-                animate={{ scale: [1, 1.15], opacity: [0.1, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeOut" }}
-              />
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <motion.div
+          className="absolute inset-0 rounded-full"
+          style={{ border: `1.5px solid ${ringColor.a}` }}
+          animate={{ scale: [1, 1.5], opacity: [0.4, 0] }}
+          transition={{ duration: ringDuration, repeat: Infinity, ease: 'easeOut' }}
+        />
+        <motion.div
+          className="absolute inset-0 rounded-full"
+          style={{ border: `1px solid ${ringColor.b}` }}
+          animate={{ scale: [1, 1.8], opacity: [0.3, 0] }}
+          transition={{ duration: ringDuration, repeat: Infinity, ease: 'easeOut', delay: ringDuration * 0.3 }}
+        />
+      </motion.div>
     </div>
   );
 }

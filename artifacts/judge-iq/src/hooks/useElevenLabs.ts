@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useConversation } from '@elevenlabs/react';
 import type { Mode } from '@elevenlabs/react';
 import { useVoiceState } from '@/context/VoiceStateContext';
@@ -13,14 +13,16 @@ interface SearchParameters {
 export function useElevenLabs() {
   const { setState, addLog, setSearchResults, addTranscript } = useVoiceState();
   const isToolRunning = useRef(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const conversation = useConversation({
     onConnect: () => {
-      addLog('Connected to ElevenAgents.', 'success');
+      setConnectionError(null);
+      addLog('Connected to ElevenLabs agent.', 'success');
       setState('LISTENING');
     },
     onDisconnect: () => {
-      addLog('Disconnected from ElevenAgents.', 'system');
+      addLog('Disconnected from ElevenLabs agent.', 'system');
       setState('IDLE');
       isToolRunning.current = false;
     },
@@ -33,25 +35,27 @@ export function useElevenLabs() {
       }
     },
     onError: (message) => {
-      addLog(`ElevenAgents error: ${message}`, 'error');
+      const errorStr = typeof message === 'string' ? message : JSON.stringify(message);
+      addLog(`ElevenLabs error: ${errorStr}`, 'error');
+      setConnectionError(errorStr);
       setState('IDLE');
     },
     onModeChange: (prop: { mode: Mode }) => {
       if (prop.mode === 'speaking') {
         if (isToolRunning.current) {
-          addLog('Extracted documents successfully. Synthesizing...', 'success');
+          addLog('Firecrawl data received. Agent synthesizing profile...', 'success');
           isToolRunning.current = false;
         }
         setState('SPEAKING');
       } else if (prop.mode === 'listening') {
         setState('LISTENING');
-        addLog('Listening to voice input...', 'info');
+        addLog('Listening...', 'info');
       }
     },
     clientTools: {
       firecrawl_search: async (parameters: SearchParameters): Promise<string> => {
         const query = parameters.query || parameters.judge_name || '';
-        addLog(`Triggering Firecrawl Search Tool for "${query}"...`, 'warning');
+        addLog(`Searching for "${query}" via Firecrawl...`, 'warning');
         setState('PROCESSING');
         isToolRunning.current = true;
 
@@ -79,22 +83,43 @@ export function useElevenLabs() {
 
   const start = useCallback(async () => {
     if (!AGENT_ID) {
-      addLog('VITE_ELEVENLABS_AGENT_ID not configured. Set this env var to enable voice.', 'error');
+      addLog('No ElevenLabs Agent ID configured.', 'error');
+      setConnectionError('VITE_ELEVENLABS_AGENT_ID is not set.');
       return;
     }
-    addLog('Connecting to ElevenAgents...', 'system');
+
+    setConnectionError(null);
+    addLog('Requesting microphone access...', 'system');
+
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
-      await conversation.startSession({ agentId: AGENT_ID, connectionType: 'webrtc' as const });
+      addLog('Microphone granted. Connecting to ElevenLabs...', 'system');
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
-      addLog(`Failed to start session: ${msg}`, 'error');
+      addLog(`Microphone access denied: ${msg}`, 'error');
+      setConnectionError(`Microphone access denied. Please allow microphone access and try again.`);
+      return;
+    }
+
+    try {
+      await conversation.startSession({
+        agentId: AGENT_ID,
+        connectionType: 'webrtc',
+      });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      addLog(`Failed to connect: ${msg}`, 'error');
+      setConnectionError(`Connection failed: ${msg}`);
     }
   }, [conversation, addLog]);
 
   const stop = useCallback(async () => {
     addLog('Ending session...', 'system');
-    await conversation.endSession();
+    try {
+      await conversation.endSession();
+    } catch (e) {
+      // ignore
+    }
     setState('IDLE');
   }, [conversation, addLog, setState]);
 
@@ -103,5 +128,6 @@ export function useElevenLabs() {
     stop,
     status: conversation.status,
     isSpeaking: conversation.isSpeaking,
+    connectionError,
   };
 }

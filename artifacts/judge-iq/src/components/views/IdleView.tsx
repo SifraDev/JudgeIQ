@@ -7,11 +7,14 @@ const AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID || '';
 
 interface IdleViewProps {
   onStart: () => void;
+  connectionError?: string | null;
 }
 
-export function IdleView({ onStart }: IdleViewProps) {
+export function IdleView({ onStart, connectionError }: IdleViewProps) {
   const { state } = useVoiceState();
   const isListening = state === 'LISTENING';
+  const isSpeaking = state === 'SPEAKING';
+  const isActive = isListening || isSpeaking;
 
   return (
     <motion.div
@@ -48,21 +51,35 @@ export function IdleView({ onStart }: IdleViewProps) {
         <CSSOrb state={state} size="md" />
       </motion.div>
 
-      <div className="h-8 mt-4 flex items-center justify-center">
+      <div className="h-10 mt-4 flex flex-col items-center justify-center gap-1">
         <AnimatePresence>
-          {isListening && (
+          {isActive && (
             <motion.span
-              key="listening-label"
+              key="state-label"
               initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: [0.4, 0.8, 0.4] }}
+              animate={{ opacity: [0.5, 0.9, 0.5] }}
               exit={{ opacity: 0, y: -4 }}
               transition={{
-                opacity: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+                opacity: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
                 y: { duration: 0.3 },
               }}
-              className="text-xs text-blue-300/60 uppercase tracking-[0.2em] font-display"
+              className="text-xs text-blue-300/70 uppercase tracking-[0.2em] font-display"
             >
-              Listening...
+              {isSpeaking ? 'Speaking...' : 'Listening...'}
+            </motion.span>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {connectionError && (
+            <motion.span
+              key="error"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="text-[11px] text-red-400/80 max-w-sm text-center px-4"
+            >
+              {connectionError}
             </motion.span>
           )}
         </AnimatePresence>

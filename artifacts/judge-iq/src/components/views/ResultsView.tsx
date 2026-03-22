@@ -117,7 +117,7 @@ function FloatingOrb() {
   const isSpeaking = state === 'SPEAKING';
   const isActive = isListening || isSpeaking;
 
-  const label = isSpeaking ? 'Speaking' : isListening ? 'Listening' : 'Ready';
+  const label = isSpeaking ? 'Speaking...' : isListening ? 'Listening...' : '';
 
   return (
     <motion.div

@@ -1,5 +1,5 @@
-import React, { useCallback, Component, type ReactNode } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import React, { useCallback, useState, Component, type ReactNode } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useVoiceState } from '@/context/VoiceStateContext';
 import { IdleView } from '@/components/views/IdleView';
 import { ProcessingView } from '@/components/views/ProcessingView';
@@ -18,28 +18,29 @@ function getView(state: string, hasResults: boolean) {
 }
 
 class ElevenLabsErrorBoundary extends Component<
-  { fallback: ReactNode; children: ReactNode },
-  { hasError: boolean; errorMsg: string }
+  { children: ReactNode; onError: (msg: string) => void },
+  { hasError: boolean }
 > {
-  state = { hasError: false, errorMsg: '' };
+  state = { hasError: false };
 
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, errorMsg: error.message };
+  static getDerivedStateFromError() {
+    return { hasError: true };
   }
 
   componentDidCatch(error: Error) {
-    console.error('[ElevenLabs] Session error, falling back to dev mode:', error);
+    console.error('[ElevenLabs] Render error:', error);
+    this.props.onError(error.message);
   }
 
   render() {
     if (this.state.hasError) {
-      return this.props.fallback;
+      return null;
     }
     return this.props.children;
   }
 }
 
-function CinematicShell({ onStart }: { onStart: () => void }) {
+function CinematicShell({ onStart, connectionError }: { onStart: () => void; connectionError?: string | null }) {
   const { state, hasResults } = useVoiceState();
   const currentView = getView(state, hasResults);
 
@@ -56,7 +57,7 @@ function CinematicShell({ onStart }: { onStart: () => void }) {
 
       <div className="relative z-10">
         <AnimatePresence mode="wait">
-          {currentView === 'idle' && <IdleView key="idle" onStart={onStart} />}
+          {currentView === 'idle' && <IdleView key="idle" onStart={onStart} connectionError={connectionError} />}
           {currentView === 'processing' && <ProcessingView key="processing" />}
           {currentView === 'results' && <ResultsView key="results" />}
         </AnimatePresence>
@@ -69,33 +70,40 @@ function CinematicShell({ onStart }: { onStart: () => void }) {
 }
 
 function ProductionInner() {
-  const { start } = useElevenLabsSession();
+  const { start, connectionError } = useElevenLabsSession();
 
   const handleStart = useCallback(() => {
     start();
   }, [start]);
 
-  return <CinematicShell onStart={handleStart} />;
+  return <CinematicShell onStart={handleStart} connectionError={connectionError} />;
 }
 
-function DevCinematicView() {
+function DevCinematicView({ renderError }: { renderError?: string | null }) {
   const { setState } = useVoiceState();
 
   const handleStart = useCallback(() => {
     setState('LISTENING');
   }, [setState]);
 
-  return <CinematicShell onStart={handleStart} />;
+  return <CinematicShell onStart={handleStart} connectionError={renderError} />;
 }
 
 export default function Home() {
+  const [renderError, setRenderError] = useState<string | null>(null);
+
   if (AGENT_ID) {
     return (
-      <ElevenLabsErrorBoundary fallback={<DevCinematicView />}>
-        <ElevenLabsSessionProvider>
-          <ProductionInner />
-        </ElevenLabsSessionProvider>
-      </ElevenLabsErrorBoundary>
+      <>
+        <ElevenLabsErrorBoundary onError={(msg) => setRenderError(msg)}>
+          <ElevenLabsSessionProvider>
+            <ProductionInner />
+          </ElevenLabsSessionProvider>
+        </ElevenLabsErrorBoundary>
+        {renderError && (
+          <DevCinematicView renderError={`Voice unavailable: ${renderError}. Using demo mode.`} />
+        )}
+      </>
     );
   }
   return <DevCinematicView />;
