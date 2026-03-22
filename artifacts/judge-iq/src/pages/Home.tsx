@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useCallback } from 'react';
+import React, { Suspense, lazy, useCallback, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useVoiceState } from '@/context/VoiceStateContext';
 import { IdleView } from '@/components/views/IdleView';
@@ -59,7 +59,27 @@ function DevCinematicView() {
 }
 
 export default function Home() {
+  const [voiceEngineMounted, setVoiceEngineMounted] = useState(false);
+
   if (ElevenLabsSessionProvider && ElevenLabsCinematicView) {
+    if (!voiceEngineMounted) {
+      return (
+        <div className="min-h-screen bg-background relative overflow-hidden">
+          <div
+            className="absolute inset-0 z-0 opacity-5 pointer-events-none"
+            style={{
+              backgroundImage: `url(${import.meta.env.BASE_URL}images/legal-bg.png)`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          />
+          <div className="relative z-10">
+            <IdleView onStart={() => setVoiceEngineMounted(true)} />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <Suspense fallback={<DevCinematicView />}>
         <ElevenLabsSessionProvider>
@@ -68,5 +88,6 @@ export default function Home() {
       </Suspense>
     );
   }
+
   return <DevCinematicView />;
 }
