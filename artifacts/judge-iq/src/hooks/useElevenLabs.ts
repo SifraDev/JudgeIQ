@@ -83,12 +83,12 @@ export function useElevenLabs() {
     },
     onModeChange: (prop: any) => {
       try {
+        // EL CANDADO MAESTRO: Si la herramienta está buscando, ignoramos los "audios de relleno" 
+        // para que la pantalla no salga del estado PROCESSING.
+        if (isToolRunning.current) return;
+
         const mode = prop?.mode || prop;
         if (mode === 'speaking') {
-          if (isToolRunning.current) {
-            addLog('Extracted documents successfully. Synthesizing...', 'success');
-            isToolRunning.current = false;
-          }
           setState('SPEAKING');
         } else if (mode === 'listening') {
           setState('LISTENING');
@@ -103,8 +103,10 @@ export function useElevenLabs() {
         try {
           const query = parameters?.query || parameters?.judge_name || '';
           addLog(`Triggering Firecrawl Search Tool for "${query}"...`, 'warning');
-          setState('PROCESSING');
+
+          // 1. FORZAMOS EL ESTADO A PROCESAMIENTO
           isToolRunning.current = true;
+          setState('PROCESSING');
 
           const baseUrl = (import.meta.env.BASE_URL as string || '').replace(/\/$/, '');
           const response = await fetch(`${baseUrl}/api/firecrawl/search`, {
@@ -118,10 +120,18 @@ export function useElevenLabs() {
           const data = await response.json();
           const results = Array.isArray(data?.results) ? data.results : [];
           addLog(`Firecrawl returned ${results.length} documents.`, 'success');
+
+          // 2. DISPARAMOS LOS RESULTADOS AL DASHBOARD
           setSearchResults(results);
+
+          // 3. LIBERAMOS EL CANDADO Y PREPARAMOS A VICTORIA PARA HABLAR LOS RESULTADOS
+          isToolRunning.current = false;
+          setState('SPEAKING');
 
           return JSON.stringify(data);
         } catch (error: any) {
+          isToolRunning.current = false;
+          setState('SPEAKING'); // Para que la UI se recupere y ella pida disculpas
           const msg = error instanceof Error ? error.message : String(error);
           addLog(`Firecrawl search failed: ${msg}`, 'error');
           return JSON.stringify({ error: msg, success: false, results: [] });

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { CSSOrb } from '@/components/CSSOrb';
+import { useVoiceState } from '@/context/VoiceStateContext';
 
 interface IdleViewProps {
   onStart: () => void;
@@ -8,14 +9,37 @@ interface IdleViewProps {
 }
 
 export function IdleView({ onStart, isReconnect = false }: IdleViewProps) {
-  const [localState, setLocalState] = useState<'IDLE' | 'LISTENING'>('IDLE');
+  // Traemos el estado REAL de la IA
+  const { state } = useVoiceState();
 
   const handleClick = () => {
-    setLocalState('LISTENING');
-    onStart();
+    // Solo permitimos hacer clic para iniciar si está apagado
+    if (state === 'IDLE') {
+      onStart();
+    }
   };
 
-  const idleLabel = isReconnect ? 'Connection Lost — Tap to Retry' : 'Tap to Start';
+  // Decidimos qué texto mostrar basándonos en el estado real
+  let label = 'Tap to Start';
+  if (isReconnect && state === 'IDLE') {
+    label = 'Connection Lost — Tap to Retry';
+  } else if (state === 'LISTENING') {
+    label = 'Listening...';
+  } else if (state === 'SPEAKING') {
+    label = 'Speaking...';
+  } else if (state !== 'IDLE') {
+    label = 'Connecting...'; 
+  }
+
+  // Decidimos los colores del texto
+  let textColor = 'text-muted-foreground';
+  if (state === 'LISTENING' || state === 'SPEAKING') {
+    textColor = 'text-cyan-400 font-bold';
+  } else if (isReconnect && state === 'IDLE') {
+    textColor = 'text-orange-400/80';
+  }
+
+  const isAnimating = state !== 'IDLE';
 
   return (
     <motion.div
@@ -49,22 +73,15 @@ export function IdleView({ onStart, isReconnect = false }: IdleViewProps) {
         className="relative cursor-pointer flex flex-col items-center justify-center"
         onClick={handleClick}
       >
-        <CSSOrb state={localState} size="md" />
+        {/* Le pasamos el estado real al Orbe para que se mueva correctamente */}
+        <CSSOrb state={state} size="md" />
 
         <motion.p
-          animate={{ opacity: localState === 'LISTENING' ? [0.5, 1, 0.5] : 1 }}
-          transition={{ duration: 1.5, repeat: localState === 'LISTENING' ? Infinity : 0 }}
-          className={`text-center mt-12 text-sm font-display tracking-widest uppercase ${
-            localState === 'LISTENING'
-              ? 'text-cyan-400 font-bold'
-              : isReconnect
-                ? 'text-orange-400/80'
-                : 'text-muted-foreground'
-          }`}
+          animate={{ opacity: isAnimating ? [0.5, 1, 0.5] : 1 }}
+          transition={{ duration: 1.5, repeat: isAnimating ? Infinity : 0 }}
+          className={`text-center mt-12 text-sm font-display tracking-widest uppercase ${textColor}`}
         >
-          {localState === 'LISTENING'
-            ? (isReconnect ? 'Reconnecting...' : 'Listening...')
-            : idleLabel}
+          {label}
         </motion.p>
       </motion.div>
     </motion.div>

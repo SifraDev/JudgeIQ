@@ -3,17 +3,17 @@ import { AnimatePresence } from 'framer-motion';
 import { useVoiceState } from '@/context/VoiceStateContext';
 import { useElevenLabsSession } from '@/components/ElevenLabsSession';
 import { IdleView } from '@/components/views/IdleView';
-import { ConnectedView } from '@/components/views/ConnectedView';
 import { ProcessingView } from '@/components/views/ProcessingView';
 import { ResultsView } from '@/components/views/ResultsView';
 import { DevStateToggle } from '@/components/DevStateToggle';
 import { DevConsole } from '@/components/DevConsole';
 
+// ELIMINAMOS la vista "connected" que inventó Replit.
+// Si no hay resultados y no está procesando, siempre mostrará "idle" (nuestro orbe bonito).
 function getView(state: string, hasResults: boolean) {
   if (state === 'PROCESSING') return 'processing';
   if (hasResults) return 'results';
-  if (state === 'LISTENING' || state === 'SPEAKING') return 'connected';
-  return 'idle';
+  return 'idle'; 
 }
 
 export function ElevenLabsCinematicView() {
@@ -40,7 +40,10 @@ export function ElevenLabsCinematicView() {
   };
 
   const currentView = getView(state, hasResults);
-  const isReconnect = hasConnectedBefore.current && currentView === 'idle';
+
+  // Solo consideramos que es un "reconnect" si el estado vuelve a IDLE después de haber conectado.
+  // Mientras esté LISTENING o SPEAKING, no es un reconnect.
+  const isReconnect = hasConnectedBefore.current && state === 'IDLE';
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -58,7 +61,6 @@ export function ElevenLabsCinematicView() {
           {currentView === 'idle' && (
             <IdleView key="idle" onStart={handleReconnect} isReconnect={isReconnect} />
           )}
-          {currentView === 'connected' && <ConnectedView key="connected" />}
           {currentView === 'processing' && <ProcessingView key="processing" />}
           {currentView === 'results' && <ResultsView key="results" />}
         </AnimatePresence>

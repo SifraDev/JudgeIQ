@@ -1,0 +1,46 @@
+Task: Implement LLM Middleware for Firecrawl Data Synthesis
+
+Context:
+Currently, our firecrawl_search tool in the React frontend (useElevenLabs.ts) fetches raw scraped data and returns it directly to the ElevenLabs agent. The raw data is too massive, causing the ElevenLabs agent's context window to overflow, resulting in hallucinated responses or refusal to speak. We need to introduce an intermediate LLM step (OpenAI) in the backend to synthesize the raw Firecrawl data into a strict JSON format before it reaches the frontend.
+
+Backend Requirements (api-server):
+
+Install the openai npm package in the api-server workspace.
+
+Create a new endpoint: POST /api/research.
+
+In this endpoint:
+
+First, execute the Firecrawl search using the provided query (just like the current firecrawl route).
+
+Second, take the raw markdown/content returned by Firecrawl and pass it to OpenAI (use gpt-4o-mini for speed) using structured output / JSON mode.
+
+The OpenAI system prompt must demand a strict JSON object with exactly these three keys:
+
+"spoken_script": A 40-second executive summary of the judge to be read aloud (String).
+
+"tendencies": An array of 3 short strings describing the judge's courtroom tendencies.
+
+"biases": An array of 2 short strings describing the judge's known legal biases or inclinations.
+
+Return this structured JSON to the client.
+
+Frontend Requirements (judge-iq):
+
+Update src/hooks/useElevenLabs.ts. Inside the clientTools -> firecrawl_search function:
+
+Change the fetch URL to call /api/research instead of /api/firecrawl/search.
+
+Parse the JSON response (spoken_script, tendencies, biases).
+
+Update the global React state (using setSearchResults or similar) to store the tendencies and biases so the ResultsView cards can display them.
+
+Crucial: The tool must return JSON.stringify(data.spoken_script); to ElevenLabs. ElevenLabs should ONLY receive the short script, not the arrays, so it reads it flawlessly.
+
+Strict Constraints:
+
+DO NOT modify ANY visual designs, CSS, or Framer Motion animations in the frontend.
+
+DO NOT touch the IdleView, ResultsView layout, or the Orb component. Only update the state wiring so the cards display the new JSON arrays.
+
+If an OPENAI_API_KEY is required, pause and prompt the user to add it to Secrets.
