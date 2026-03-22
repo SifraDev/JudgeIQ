@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import FirecrawlApp from "@mendable/firecrawl-js";
-import { openai } from "@workspace/integrations-openai-ai-server";
 import { FirecrawlSearchBody } from "@workspace/api-zod";
+import { openai } from "@workspace/integrations-openai-ai-server";
 
 const router: IRouter = Router();
 
