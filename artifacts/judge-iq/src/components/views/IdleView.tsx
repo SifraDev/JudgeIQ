@@ -60,7 +60,7 @@ export function IdleView({ onStart }: IdleViewProps) {
                 opacity: { duration: 2, repeat: Infinity, ease: "easeInOut" },
                 y: { duration: 0.3 },
               }}
-              className="text-xs text-blue-300/60 uppercase tracking-[0.2em] font-mono"
+              className="text-xs text-blue-300/60 uppercase tracking-[0.2em] font-display"
             >
               Listening...
             </motion.span>

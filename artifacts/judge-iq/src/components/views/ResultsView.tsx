@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useVoiceState } from '@/context/VoiceStateContext';
 import { Citations } from '@/components/Citations';
 import { CSSOrb } from '@/components/CSSOrb';
@@ -135,14 +135,20 @@ function FloatingOrb() {
             transition={{ duration: 1, repeat: Infinity }}
           />
         )}
-        <motion.span
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isActive ? [0.4, 0.8, 0.4] : 0.6 }}
-          transition={isActive ? { duration: 2, repeat: Infinity, ease: "easeInOut" } : { delay: 1 }}
-          className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-blue-300/60 uppercase tracking-wider whitespace-nowrap font-mono"
-        >
-          {label}
-        </motion.span>
+        <AnimatePresence>
+          {isActive && (
+            <motion.span
+              key="orb-label"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0.4, 0.8, 0.4] }}
+              exit={{ opacity: 0 }}
+              transition={{ opacity: { duration: 2, repeat: Infinity, ease: "easeInOut" } }}
+              className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-blue-300/60 uppercase tracking-[0.15em] whitespace-nowrap font-display"
+            >
+              {label}
+            </motion.span>
+          )}
+        </AnimatePresence>
       </div>
     </motion.div>
   );
