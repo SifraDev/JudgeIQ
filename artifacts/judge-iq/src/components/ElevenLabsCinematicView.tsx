@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useVoiceState } from '@/context/VoiceStateContext';
 import { useElevenLabsSession } from '@/components/ElevenLabsSession';
@@ -19,9 +19,12 @@ export function ElevenLabsCinematicView() {
   const { state, hasResults } = useVoiceState();
   const { start } = useElevenLabsSession();
 
-  const handleStart = useCallback(() => {
+  // EL FIX: Apenas este componente nace, enciende el motor de ElevenLabs automáticamente.
+  // ¡No más doble clics!
+  useEffect(() => {
     start();
-  }, [start]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const currentView = getView(state, hasResults);
 
@@ -38,7 +41,7 @@ export function ElevenLabsCinematicView() {
 
       <div className="relative z-10">
         <AnimatePresence mode="wait">
-          {currentView === 'idle' && <IdleView key="idle" onStart={handleStart} />}
+          {currentView === 'idle' && <IdleView key="idle" onStart={() => {}} />}
           {currentView === 'processing' && <ProcessingView key="processing" />}
           {currentView === 'results' && <ResultsView key="results" />}
         </AnimatePresence>

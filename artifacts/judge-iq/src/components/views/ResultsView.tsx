@@ -6,6 +6,7 @@ import { CSSOrb } from '@/components/CSSOrb';
 import { Download, Scale, BookOpen, AlertCircle, TrendingUp, Fingerprint, Gavel } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import html2pdf from 'html2pdf.js';
+import { useElevenLabsSession } from '@/components/ElevenLabsSession';
 
 export function ResultsView() {
   const { searchResults, transcript, state } = useVoiceState();
@@ -161,11 +162,16 @@ export function ResultsView() {
 
 function FloatingOrb() {
   const { state } = useVoiceState();
-  const isActive = state === 'SPEAKING' || state === 'LISTENING';
+  const { start, stop, status } = useElevenLabsSession();
 
-  // --- REINICIO DIRECTO ---
-  const handleReset = () => {
-    window.location.reload(); 
+  const isActive = state === 'SPEAKING' || state === 'LISTENING' || status === 'connected';
+
+  const handleMicToggle = async () => {
+    if (isActive) {
+      await stop(); // El abogado lo apaga para leer tranquilo
+    } else {
+      await start(); // Lo enciende para hacer preguntas de seguimiento
+    }
   };
 
   return (
@@ -173,29 +179,38 @@ function FloatingOrb() {
       initial={{ opacity: 0, scale: 0.5, y: 50 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ delay: 0.6, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed bottom-8 right-8 z-40 cursor-pointer"
-      onClick={handleReset}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
-      title="Click to Reset Search"
+      // CAMBIO DE POSICIÓN: Lo subimos (bottom-20) y lo despegamos un poco del borde (right-12)
+      className="fixed bottom-20 right-12 z-40 cursor-pointer"
+      onClick={handleMicToggle}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      title={isActive ? "Click to Mute/Stop" : "Click to Ask a Question"}
     >
-      <div className="relative">
-        <CSSOrb state={state} size="sm" />
-        {isActive && (
-          <motion.div
-            className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-black z-20"
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 1, repeat: Infinity }}
-          />
-        )}
-        <motion.span
+      <div className="flex flex-col items-center">
+        <div className="relative">
+          <CSSOrb state={state} size="sm" />
+
+          {/* Puntito verde de "En vivo" */}
+          {isActive && (
+            <motion.div
+              className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-black z-20"
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            />
+          )}
+        </div>
+
+        {/* TEXTO DEBAJO DEL ORBE (Ya no está montado encima) */}
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
-          className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-yellow-500/60 uppercase tracking-wider whitespace-nowrap font-mono"
+          className={`mt-3 text-[10px] uppercase tracking-widest font-bold whitespace-nowrap ${
+            isActive ? 'text-green-400' : 'text-neutral-500'
+          }`}
         >
-          Restart
-        </motion.span>
+          {isActive ? 'Listening...' : 'Mic Off - Tap to Ask'}
+        </motion.div>
       </div>
     </motion.div>
   );
