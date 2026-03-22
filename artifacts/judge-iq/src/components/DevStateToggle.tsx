@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useVoiceState, VoiceState } from '@/context/VoiceStateContext';
 import { Button } from '@/components/ui/button';
-import { Settings2, Mic, Cpu, Volume2, RotateCcw, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Settings2, Mic, Cpu, Volume2, RotateCcw, ChevronRight, ChevronLeft, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const MOCK_PROFILE = [
@@ -48,8 +48,17 @@ const MOCK_CITATIONS = [
 export function DevStateToggle() {
   const { state, setState, reset, addLog, setSearchResults, addTranscript } = useVoiceState();
   const [isOpen, setIsOpen] = useState(false);
+  const [simulating, setSimulating] = useState(false);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach(clearTimeout);
+    };
+  }, []);
 
   const handleState = (newState: VoiceState) => () => {
+    if (simulating) return;
     if (newState === 'SPEAKING') {
       reset();
       setSearchResults(MOCK_CITATIONS);
@@ -60,6 +69,57 @@ export function DevStateToggle() {
       addLog('Agent synthesizing profile from extracted documents...', 'info');
     }
     setState(newState);
+  };
+
+  const simulateFullFlow = () => {
+    if (simulating) return;
+    setSimulating(true);
+
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+
+    reset();
+
+    setState('LISTENING');
+    addLog('User speaking: "Tell me about Judge William Alsup"', 'info');
+
+    const t1 = setTimeout(() => {
+      setState('PROCESSING');
+      addLog('Agent recognized query. Invoking Firecrawl search tool...', 'warning');
+      addLog('POST /api/firecrawl/search — query: "Judge William Alsup"', 'info');
+    }, 1000);
+
+    const t2 = setTimeout(() => {
+      addLog('Firecrawl crawling justia.com...', 'info');
+    }, 2000);
+
+    const t3 = setTimeout(() => {
+      addLog('Firecrawl crawling ballotpedia.org...', 'info');
+    }, 2800);
+
+    const t4 = setTimeout(() => {
+      addLog('Firecrawl crawling courtlistener.com...', 'info');
+    }, 3500);
+
+    const t5 = setTimeout(() => {
+      setSearchResults(MOCK_CITATIONS);
+      addLog(`Firecrawl returned ${MOCK_CITATIONS.length} documents (total: 247K chars).`, 'success');
+      MOCK_PROFILE.forEach(paragraph => {
+        addTranscript('agent', paragraph);
+      });
+      addLog('Agent synthesizing profile from extracted documents...', 'success');
+      setState('SPEAKING');
+      setSimulating(false);
+    }, 5000);
+
+    timeoutsRef.current = [t1, t2, t3, t4, t5];
+  };
+
+  const handleReset = () => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+    setSimulating(false);
+    reset();
   };
 
   return (
@@ -80,9 +140,23 @@ export function DevStateToggle() {
 
             <div className="grid grid-cols-1 gap-1.5">
               <Button
+                variant="default"
+                size="sm"
+                onClick={simulateFullFlow}
+                disabled={simulating}
+                className="justify-start text-[11px] h-8 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30"
+              >
+                <Play className="w-3 h-3 mr-1.5" />
+                {simulating ? 'Simulating...' : 'Simulate Full Flow'}
+              </Button>
+
+              <div className="h-px bg-white/10 my-0.5" />
+
+              <Button
                 variant={state === 'LISTENING' ? 'default' : 'outline'}
                 size="sm"
                 onClick={handleState('LISTENING')}
+                disabled={simulating}
                 className="justify-start text-[11px] h-7"
               >
                 <Mic className="w-3 h-3 mr-1.5" /> Listening
@@ -91,6 +165,7 @@ export function DevStateToggle() {
                 variant={state === 'PROCESSING' ? 'default' : 'outline'}
                 size="sm"
                 onClick={handleState('PROCESSING')}
+                disabled={simulating}
                 className="justify-start text-[11px] h-7"
               >
                 <Cpu className="w-3 h-3 mr-1.5" /> Processing
@@ -99,6 +174,7 @@ export function DevStateToggle() {
                 variant={state === 'SPEAKING' ? 'default' : 'outline'}
                 size="sm"
                 onClick={handleState('SPEAKING')}
+                disabled={simulating}
                 className="justify-start text-[11px] h-7"
               >
                 <Volume2 className="w-3 h-3 mr-1.5" /> Speaking
@@ -107,7 +183,7 @@ export function DevStateToggle() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={reset}
+                onClick={handleReset}
                 className="justify-start text-[11px] h-7 text-muted-foreground hover:text-white"
               >
                 <RotateCcw className="w-3 h-3 mr-1.5" /> Reset

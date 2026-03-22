@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Mic } from 'lucide-react';
+import { CSSOrb } from '@/components/CSSOrb';
 
 const AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID || '';
 
@@ -38,24 +38,10 @@ export function IdleView({ onStart }: IdleViewProps) {
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="relative"
+        className="relative cursor-pointer"
+        onClick={onStart}
       >
-        <motion.div
-          className="absolute inset-0 rounded-full bg-primary/20 blur-3xl -m-8"
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <button
-          onClick={onStart}
-          className="relative w-40 h-40 rounded-full bg-gradient-to-br from-slate-800 to-black border border-white/10 shadow-[inset_0_-10px_30px_rgba(0,0,0,0.8),0_0_60px_rgba(212,175,55,0.15)] flex items-center justify-center group hover:border-primary/30 transition-all duration-500 cursor-pointer"
-        >
-          <motion.div
-            className="absolute inset-0 rounded-full bg-primary/10"
-            animate={{ scale: [1, 1.1, 1], opacity: [0, 0.3, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <Mic className="w-10 h-10 text-primary/70 group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
-        </button>
+        <CSSOrb state="IDLE" size="md" />
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -76,15 +62,6 @@ export function IdleView({ onStart }: IdleViewProps) {
           Dev Mode — Use toggles to simulate states
         </motion.span>
       )}
-
-      <video
-        src={`${import.meta.env.BASE_URL}orb-video.webm`}
-        preload="auto"
-        muted
-        playsInline
-        className="absolute w-0 h-0 opacity-0 pointer-events-none"
-        aria-hidden="true"
-      />
     </motion.div>
   );
 }

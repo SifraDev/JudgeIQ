@@ -2,7 +2,8 @@ import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useVoiceState } from '@/context/VoiceStateContext';
 import { Citations } from '@/components/Citations';
-import { Download, Scale, Mic } from 'lucide-react';
+import { CSSOrb } from '@/components/CSSOrb';
+import { Download, Scale } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import html2pdf from 'html2pdf.js';
 
@@ -122,33 +123,10 @@ function FloatingOrb() {
       className="fixed bottom-8 right-8 z-40"
     >
       <div className="relative">
-        <motion.div
-          className="absolute inset-0 rounded-full bg-primary/30 blur-xl -m-3"
-          animate={{
-            scale: isActive ? [1, 1.4, 1] : 1,
-            opacity: isActive ? [0.3, 0.6, 0.3] : 0.2,
-          }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-primary/40 shadow-[0_0_40px_rgba(212,175,55,0.25)]">
-          <video
-            src={`${import.meta.env.BASE_URL}orb-video.webm`}
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLVideoElement).style.display = 'none';
-            }}
-          />
-          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-            <Mic className={`w-5 h-5 ${isActive ? 'text-primary' : 'text-white/50'}`} />
-          </div>
-        </div>
+        <CSSOrb state={state} size="sm" />
         {isActive && (
           <motion.div
-            className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-black"
+            className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-black z-20"
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ duration: 1, repeat: Infinity }}
           />
@@ -157,9 +135,9 @@ function FloatingOrb() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
-          className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] text-primary/60 uppercase tracking-wider whitespace-nowrap font-mono"
+          className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-primary/60 uppercase tracking-wider whitespace-nowrap font-mono"
         >
-          {isActive ? 'Listening' : 'Mic Ready'}
+          {isActive ? 'Active' : 'Ready'}
         </motion.span>
       </div>
     </motion.div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { SystemLogs } from '@/components/SystemLogs';
-import { Loader2 } from 'lucide-react';
+import { CSSOrb } from '@/components/CSSOrb';
 
 export function ProcessingView() {
   return (
@@ -20,37 +20,16 @@ export function ProcessingView() {
           transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="flex flex-col items-center justify-center"
         >
-          <div className="relative w-72 h-72 md:w-96 md:h-96 rounded-2xl overflow-hidden border border-primary/20 shadow-[0_0_80px_rgba(212,175,55,0.15)]">
-            <video
-              src={`${import.meta.env.BASE_URL}orb-video.webm`}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="absolute inset-0 w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLVideoElement).style.display = 'none';
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
-            <motion.div
-              className="absolute inset-0 flex items-center justify-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent animate-spin" style={{ animationDuration: '4s' }} />
-              <Loader2 className="w-12 h-12 text-primary animate-spin drop-shadow-[0_0_15px_rgba(212,175,55,0.6)]" />
-            </motion.div>
-          </div>
+          <CSSOrb state="PROCESSING" size="lg" />
 
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="mt-6 text-center font-display text-lg text-primary/80 tracking-wider"
+            className="mt-8 text-center font-display text-lg tracking-wider"
           >
-            Searching judicial records...
+            <span className="text-orange-400/90">Firecrawl</span>
+            <span className="text-muted-foreground"> is scraping judicial records...</span>
           </motion.p>
         </motion.div>
 

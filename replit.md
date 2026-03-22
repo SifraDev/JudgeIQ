@@ -48,20 +48,22 @@ artifacts-monorepo/
 
 ### Cinematic 3-State UX Flow
 
-- **State 1 (Idle/Listening)**: Clean minimalist landing with centered orb + branding. User clicks orb to start.
-- **State 2 (Processing)**: Two-column layout — left: fire orb video, right: SystemLogs terminal showing Firecrawl steps.
-- **State 3 (Speaking/Results)**: Header bar + profile synthesis text + citations + PDF export. Small floating orb in bottom-right for follow-up Q&A.
+- **State 1 (Idle/Listening)**: Clean minimalist landing with CSS orb (dark circle, gold ambient glow, mic icon) + branding. User clicks orb to start.
+- **State 2 (Processing)**: Two-column layout — left: Firecrawl flame orb (orange/red Flame icon with animated glow, signaling web scraping), right: SystemLogs terminal showing Firecrawl steps.
+- **State 3 (Speaking/Results)**: Header bar + profile synthesis text + citations + PDF export. Small floating CSS orb in bottom-right for follow-up Q&A.
 - `VoiceStateProvider` is at App level so ElevenLabs WebSocket stays alive across all view transitions.
-- Dev toggles (bottom-left) allow cycling through states without ElevenLabs credits.
+- Dev toggles (bottom-left) include "Simulate Full Flow" button with timed delays (LISTENING → 1s → PROCESSING with Firecrawl flame for 4s → SPEAKING with mock data).
+- All visuals are CSS/SVG-only — no video files used.
 
 ### Key Frontend Components
 
-- `components/views/IdleView.tsx` — State 1: Centered orb landing screen
-- `components/views/ProcessingView.tsx` — State 2: Two-column search dashboard
-- `components/views/ResultsView.tsx` — State 3: Profile, citations, floating orb
-- `Orb.tsx` — Reusable animated voice orb with 4 visual states
+- `CSSOrb.tsx` — Reusable CSS-only orb with 4 visual states: IDLE (ambient), LISTENING (pulsing rings), PROCESSING (Firecrawl flame), SPEAKING (active gold pulse)
+- `components/views/IdleView.tsx` — State 1: Centered CSS orb landing screen
+- `components/views/ProcessingView.tsx` — State 2: Firecrawl flame orb + SystemLogs
+- `components/views/ResultsView.tsx` — State 3: Profile, citations, floating CSS orb
+- `Orb.tsx` — Legacy wrapper using CSSOrb internally
 - `SystemLogs.tsx` — Real-time log terminal (auto-scrolling, color-coded)
-- `DevStateToggle.tsx` — Dev state simulation panel (bottom-left, collapsible)
+- `DevStateToggle.tsx` — Dev state simulation panel with "Simulate Full Flow" timed sequence
 - `DevConsole.tsx` — Phase 1 manual webhook testing (bottom bar)
 - `Citations.tsx` — Grid of source citations from Firecrawl results
 - `VoiceStateContext.tsx` — Central state machine for voice states, logs, transcript, and search results
