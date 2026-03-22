@@ -108,34 +108,21 @@ export function useElevenLabs() {
           setState('PROCESSING');
 
           const baseUrl = (import.meta.env.BASE_URL as string || '').replace(/\/$/, '');
-
-          const t0 = performance.now();
-          const crawlRes = await fetch(`${baseUrl}/api/firecrawl/search`, {
+          const response = await fetch(`${baseUrl}/api/research`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query }),
           });
-          if (!crawlRes.ok) throw new Error(`Firecrawl HTTP ${crawlRes.status}`);
-          const crawlData = await crawlRes.json();
-          const results = Array.isArray(crawlData?.results) ? crawlData.results : (Array.isArray(crawlData?.data) ? crawlData.data : []);
-          const crawlTime = ((performance.now() - t0) / 1000).toFixed(1);
-          addLog(`Firecrawl extraction complete in ${crawlTime}s (${results.length} sources)`, 'success');
 
-          addLog('Synthesizing judicial profile via LLM...', 'system');
-          const t1 = performance.now();
-          const synthRes = await fetch(`${baseUrl}/api/synthesize`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query, results }),
-          });
-          if (!synthRes.ok) throw new Error(`Synthesize HTTP ${synthRes.status}`);
-          const synthData = await synthRes.json();
-          const synthTime = ((performance.now() - t1) / 1000).toFixed(1);
-          addLog(`LLM synthesis complete in ${synthTime}s`, 'success');
+          if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
 
-          const spokenScript = synthData?.spoken_script || '';
-          const tendenciesArr = Array.isArray(synthData?.tendencies) ? synthData.tendencies : [];
-          const biasesArr = Array.isArray(synthData?.biases) ? synthData.biases : [];
+          const data = await response.json();
+          const results = Array.isArray(data?.results) ? data.results : [];
+          const spokenScript = data?.spoken_script || '';
+          const tendenciesArr = Array.isArray(data?.tendencies) ? data.tendencies : [];
+          const biasesArr = Array.isArray(data?.biases) ? data.biases : [];
+
+          addLog(`Research complete: ${results.length} sources, script ready.`, 'success');
 
           setResearchData({
             results,
@@ -146,7 +133,7 @@ export function useElevenLabs() {
           isToolRunning.current = false;
           setState('SPEAKING');
 
-          return JSON.stringify({ summary: spokenScript });
+          return spokenScript;
         } catch (error: any) {
           isToolRunning.current = false;
           setState('SPEAKING');
