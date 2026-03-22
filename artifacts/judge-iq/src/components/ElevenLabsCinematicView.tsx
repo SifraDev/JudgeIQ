@@ -9,9 +9,13 @@ import { DevStateToggle } from '@/components/DevStateToggle';
 import { DevConsole } from '@/components/DevConsole';
 
 function getView(state: string, hasResults: boolean) {
+  // Si está buscando en Firecrawl, muestra el fuego
   if (state === 'PROCESSING') return 'processing';
-  if (state === 'SPEAKING') return 'results';
+
+  // SOLO ve a resultados si Firecrawl ya trajo la data real
   if (hasResults) return 'results';
+
+  // Para cualquier otra cosa (saludar, escuchar tu voz, estar inactivo), quédate en el orbe inicial
   return 'idle';
 }
 
