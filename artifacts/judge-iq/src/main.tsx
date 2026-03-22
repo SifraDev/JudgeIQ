@@ -6,10 +6,7 @@ window.addEventListener("unhandledrejection", (event) => {
   const reason = event.reason;
 
   const isLiveKitSDKRejection =
-    (typeof reason === "object" &&
-      reason !== null &&
-      !(reason instanceof Error) &&
-      "isTrusted" in reason) ||
+    (reason instanceof Event && reason.isTrusted === true && reason.type === "error") ||
     (typeof reason === "string" &&
       /\b(DataChannel|LiveKit|livekit|websocket closed|peer connection|RTC path not found|could not createOffer)\b/.test(
         reason
