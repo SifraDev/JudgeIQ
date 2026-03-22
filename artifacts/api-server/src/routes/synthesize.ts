@@ -10,7 +10,7 @@ interface SynthesizeInput {
 
 const SYSTEM_PROMPT = `You are a legal research assistant. Given raw scraped data about a judge, produce a structured JSON object with exactly these three keys:
 
-1. "spoken_script": A very short, highly conversational assistant response of EXACTLY 2 sentences. Sentence 1 format: "I've compiled the research on Judge [Full Name] — [one punchy key insight about them]." Sentence 2 is always exactly: "I've populated the dashboard — what specific area would you like to explore?"
+1. "spoken_script": A very short, highly conversational assistant response of EXACTLY 2 sentences. Sentence 1 format: "I have compiled the research on Judge [Full Name] — [one punchy key insight about them]." Sentence 2 is always exactly: "I've populated the dashboard — what specific area would you like to explore?"
 
 2. "tendencies": An array of exactly 3 short strings (each under 15 words) describing the judge's courtroom tendencies, procedural preferences, or case management style.
 
@@ -54,7 +54,7 @@ router.post("/synthesize", async (req, res) => {
     } catch {
       req.log.error({ rawContent: rawContent.slice(0, 200) }, "Synthesize: failed to parse OpenAI JSON");
       synthesized = {
-        spoken_script: `I've compiled the research on Judge ${query} but encountered an issue synthesizing the details.`,
+        spoken_script: `I have compiled the research on Judge ${query} but encountered an issue synthesizing the details.`,
         tendencies: ["Data synthesis error"],
         biases: ["Unable to determine"],
       };
@@ -67,7 +67,7 @@ router.post("/synthesize", async (req, res) => {
       .replace(/What specific area[^.!?]*[.!?]?/gi, "")
       .trim();
     const sentences = cleaned.split(/(?<=[.!?])\s+/).filter((s) => s.length > 0);
-    const firstSentence = sentences[0] || `I've compiled the research on Judge ${query}.`;
+    const firstSentence = sentences[0] || `I have compiled the research on Judge ${query}.`;
     const spoken_script = `${firstSentence} ${BOILERPLATE}`;
 
     const rawTendencies = Array.isArray(synthesized.tendencies) ? synthesized.tendencies : [];
