@@ -41,7 +41,7 @@ export function CSSOrb({ state, size = 'md' }: CSSorbProps) {
       ? 'bg-gradient-to-br from-blue-800 via-indigo-950 to-blue-900'
       : isListening
         ? 'bg-gradient-to-br from-blue-900 via-slate-950 to-indigo-950'
-        : 'bg-gradient-to-br from-slate-900 via-slate-950 to-gray-900';
+        : 'bg-gradient-to-br from-blue-950 via-black to-indigo-950';
   const sphereBorder = isProcessing
     ? 'border-orange-500/30'
     : isSpeaking

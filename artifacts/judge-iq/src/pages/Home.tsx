@@ -1,5 +1,5 @@
-import React, { useCallback, useState, Component, type ReactNode } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import React, { useCallback, useState, useEffect, useRef, Component, type ReactNode } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { useVoiceState } from '@/context/VoiceStateContext';
 import { IdleView } from '@/components/views/IdleView';
 import { ProcessingView } from '@/components/views/ProcessingView';
@@ -17,7 +17,7 @@ function getView(state: string, hasResults: boolean) {
   return 'idle';
 }
 
-class ElevenLabsErrorBoundary extends Component<
+class VoiceErrorBoundary extends Component<
   { children: ReactNode; onError: (msg: string) => void },
   { hasError: boolean }
 > {
@@ -28,14 +28,12 @@ class ElevenLabsErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error) {
-    console.error('[ElevenLabs] Render error:', error);
+    console.error('[ElevenLabs] Voice engine error:', error);
     this.props.onError(error.message);
   }
 
   render() {
-    if (this.state.hasError) {
-      return null;
-    }
+    if (this.state.hasError) return null;
     return this.props.children;
   }
 }
@@ -69,8 +67,16 @@ function CinematicShell({ onStart, connectionError }: { onStart: () => void; con
   );
 }
 
-function ProductionInner() {
+function ConnectedInner() {
   const { start, connectionError } = useElevenLabsSession();
+  const hasAutoStarted = useRef(false);
+
+  useEffect(() => {
+    if (!hasAutoStarted.current) {
+      hasAutoStarted.current = true;
+      start();
+    }
+  }, [start]);
 
   const handleStart = useCallback(() => {
     start();
@@ -79,32 +85,46 @@ function ProductionInner() {
   return <CinematicShell onStart={handleStart} connectionError={connectionError} />;
 }
 
-function DevCinematicView({ renderError }: { renderError?: string | null }) {
+function DevCinematicView({ connectionError }: { connectionError?: string | null }) {
   const { setState } = useVoiceState();
 
   const handleStart = useCallback(() => {
     setState('LISTENING');
   }, [setState]);
 
-  return <CinematicShell onStart={handleStart} connectionError={renderError} />;
+  return <CinematicShell onStart={handleStart} connectionError={connectionError} />;
 }
 
 export default function Home() {
-  const [renderError, setRenderError] = useState<string | null>(null);
+  const [voiceMounted, setVoiceMounted] = useState(false);
+  const [mountError, setMountError] = useState<string | null>(null);
+  const { addLog } = useVoiceState();
 
-  if (AGENT_ID) {
-    return (
-      <>
-        <ElevenLabsErrorBoundary onError={(msg) => setRenderError(msg)}>
-          <ElevenLabsSessionProvider>
-            <ProductionInner />
-          </ElevenLabsSessionProvider>
-        </ElevenLabsErrorBoundary>
-        {renderError && (
-          <DevCinematicView renderError={`Voice unavailable: ${renderError}. Using demo mode.`} />
-        )}
-      </>
-    );
+  const handleFirstClick = useCallback(() => {
+    if (!AGENT_ID) {
+      return;
+    }
+    addLog('Initializing voice engine...', 'system');
+    setVoiceMounted(true);
+  }, [addLog]);
+
+  if (!AGENT_ID) {
+    return <DevCinematicView />;
   }
-  return <DevCinematicView />;
+
+  if (mountError) {
+    return <DevCinematicView connectionError={`Voice unavailable: ${mountError}. Using demo mode.`} />;
+  }
+
+  if (!voiceMounted) {
+    return <CinematicShell onStart={handleFirstClick} />;
+  }
+
+  return (
+    <VoiceErrorBoundary onError={(msg) => setMountError(msg)}>
+      <ElevenLabsSessionProvider>
+        <ConnectedInner />
+      </ElevenLabsSessionProvider>
+    </VoiceErrorBoundary>
+  );
 }
