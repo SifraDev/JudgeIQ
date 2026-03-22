@@ -20,7 +20,7 @@ export function ProcessingView() {
           transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="flex flex-col items-center justify-center"
         >
-          <CSSOrb state="PROCESSING" size="lg" />
+          <CSSOrb state="PROCESSING" size="md" />
 
           <motion.p
             initial={{ opacity: 0, y: 10 }}
