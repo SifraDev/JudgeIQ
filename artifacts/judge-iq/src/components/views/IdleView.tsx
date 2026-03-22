@@ -1,6 +1,7 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CSSOrb } from '@/components/CSSOrb';
+import { useVoiceState } from '@/context/VoiceStateContext';
 
 const AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID || '';
 
@@ -9,6 +10,9 @@ interface IdleViewProps {
 }
 
 export function IdleView({ onStart }: IdleViewProps) {
+  const { state } = useVoiceState();
+  const isListening = state === 'LISTENING';
+
   return (
     <motion.div
       key="idle-view"
@@ -41,15 +45,35 @@ export function IdleView({ onStart }: IdleViewProps) {
         className="relative cursor-pointer"
         onClick={onStart}
       >
-        <CSSOrb state="IDLE" size="md" />
+        <CSSOrb state={state} size="md" />
       </motion.div>
+
+      <div className="h-8 mt-4 flex items-center justify-center">
+        <AnimatePresence>
+          {isListening && (
+            <motion.span
+              key="listening-label"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: [0.4, 0.8, 0.4] }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{
+                opacity: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+                y: { duration: 0.3 },
+              }}
+              className="text-xs text-blue-300/60 uppercase tracking-[0.2em] font-mono"
+            >
+              Listening...
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </div>
 
       {!AGENT_ID && (
         <motion.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
-          className="mt-8 text-[10px] text-muted-foreground uppercase tracking-wider"
+          className="mt-4 text-[10px] text-muted-foreground uppercase tracking-wider"
         >
           Dev Mode — Use toggles to simulate states
         </motion.span>

@@ -14,20 +14,36 @@ const sizes = {
   lg: { px: 200, flame: 'w-16 h-16' },
 };
 
-const CONIC = `conic-gradient(
+const CONIC_IDLE = `conic-gradient(
   from 180deg at 45% 52%,
-  hsl(190, 90%, 80%) 0deg,
-  hsl(200, 95%, 75%) 35deg,
-  hsl(215, 90%, 78%) 70deg,
-  hsl(240, 65%, 82%) 110deg,
-  hsl(300, 60%, 80%) 140deg,
-  hsl(325, 80%, 78%) 165deg,
-  hsl(290, 50%, 82%) 195deg,
-  hsl(250, 55%, 82%) 225deg,
-  hsl(215, 85%, 75%) 260deg,
-  hsl(195, 95%, 78%) 295deg,
-  hsl(185, 90%, 85%) 330deg,
-  hsl(190, 90%, 80%) 360deg
+  hsl(200, 35%, 28%) 0deg,
+  hsl(210, 40%, 25%) 35deg,
+  hsl(220, 35%, 30%) 70deg,
+  hsl(240, 25%, 32%) 110deg,
+  hsl(270, 20%, 30%) 140deg,
+  hsl(250, 25%, 28%) 165deg,
+  hsl(230, 30%, 30%) 195deg,
+  hsl(215, 35%, 27%) 225deg,
+  hsl(205, 40%, 28%) 260deg,
+  hsl(195, 35%, 30%) 295deg,
+  hsl(200, 30%, 32%) 330deg,
+  hsl(200, 35%, 28%) 360deg
+)`;
+
+const CONIC_ACTIVE = `conic-gradient(
+  from 180deg at 45% 52%,
+  hsl(195, 60%, 45%) 0deg,
+  hsl(205, 65%, 40%) 35deg,
+  hsl(220, 55%, 45%) 70deg,
+  hsl(245, 40%, 48%) 110deg,
+  hsl(280, 35%, 45%) 140deg,
+  hsl(310, 45%, 42%) 165deg,
+  hsl(270, 30%, 46%) 195deg,
+  hsl(245, 35%, 44%) 225deg,
+  hsl(215, 55%, 40%) 260deg,
+  hsl(200, 65%, 42%) 295deg,
+  hsl(190, 55%, 48%) 330deg,
+  hsl(195, 60%, 45%) 360deg
 )`;
 
 export function CSSOrb({ state, size = 'md' }: CSSorbProps) {
@@ -41,24 +57,37 @@ export function CSSOrb({ state, size = 'md' }: CSSorbProps) {
   const containerStyle = { width: s.px, height: s.px };
   const blurBase = Math.max(2, Math.round(s.px * 0.04));
 
-  const saturation = isSpeaking ? 'saturate(1.3) brightness(1.1)' : isListening ? 'saturate(1.15) brightness(1.05)' : 'saturate(1)';
-  const rotationDuration = isSpeaking ? 3 : isListening ? 6 : 12;
+  const CONIC = isActive ? CONIC_ACTIVE : CONIC_IDLE;
+
+  const saturation = isSpeaking
+    ? 'saturate(1.25) brightness(1.15)'
+    : isListening
+      ? 'saturate(1.1) brightness(1.05)'
+      : 'saturate(0.85) brightness(0.8)';
+
+  const rotationDuration = isSpeaking ? 3 : isListening ? 6 : 20;
+
   const glowOpacityRange = isSpeaking
-    ? [0.6, 0.9, 0.6]
+    ? [0.4, 0.65, 0.4]
     : isListening
-      ? [0.4, 0.7, 0.4]
-      : [0.25, 0.4, 0.25];
+      ? [0.25, 0.45, 0.25]
+      : [0.08, 0.15, 0.08];
+
   const glowScaleRange = isSpeaking
-    ? [1.15, 1.35, 1.15]
+    ? [1.1, 1.25, 1.1]
     : isListening
-      ? [1.1, 1.25, 1.1]
-      : [1.05, 1.12, 1.05];
-  const breatheDuration = isSpeaking ? 1.2 : isListening ? 2 : 5;
+      ? [1.05, 1.15, 1.05]
+      : [1.0, 1.04, 1.0];
+
+  const breatheDuration = isSpeaking ? 1.2 : isListening ? 2 : 6;
+
   const breatheScale = isSpeaking
-    ? [1, 1.06, 1]
+    ? [1, 1.05, 1]
     : isListening
-      ? [1, 1.04, 1]
-      : [1, 1.015, 1];
+      ? [1, 1.03, 1]
+      : [1, 1.008, 1];
+
+  const specularOpacity = isSpeaking ? 0.35 : isListening ? 0.25 : 0.12;
 
   return (
     <div className="relative flex items-center justify-center" style={containerStyle}>
@@ -137,7 +166,7 @@ export function CSSOrb({ state, size = 'md' }: CSSorbProps) {
               }}
               animate={{
                 rotate: [0, 360],
-                opacity: isActive ? [0.5, 0.7, 0.5] : [0.3, 0.45, 0.3],
+                opacity: isActive ? [0.35, 0.55, 0.35] : [0.15, 0.25, 0.15],
               }}
               transition={{
                 rotate: { duration: rotationDuration * 1.3, repeat: Infinity, ease: "linear" },
@@ -157,17 +186,19 @@ export function CSSOrb({ state, size = 'md' }: CSSorbProps) {
                 scale: { duration: breatheDuration, repeat: Infinity, ease: "easeInOut" },
               }}
             >
-              <div
+              <motion.div
                 className="absolute inset-0 rounded-full"
                 style={{
                   background: 'radial-gradient(ellipse at 35% 30%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.1) 35%, transparent 65%)',
                 }}
+                animate={{ opacity: specularOpacity }}
+                transition={{ duration: 0.6, ease: "easeInOut" }}
               />
 
               <div
                 className="absolute inset-0 rounded-full"
                 style={{
-                  background: 'radial-gradient(circle at 50% 50%, transparent 55%, rgba(0,0,0,0.08) 100%)',
+                  background: 'radial-gradient(circle at 50% 50%, transparent 55%, rgba(0,0,0,0.15) 100%)',
                 }}
               />
             </motion.div>
@@ -176,20 +207,20 @@ export function CSSOrb({ state, size = 'md' }: CSSorbProps) {
               <>
                 <motion.div
                   className="absolute inset-0 rounded-full"
-                  style={{ border: '1.5px solid rgba(160,210,255,0.35)' }}
-                  animate={{ scale: [1, 1.5], opacity: [0.45, 0] }}
+                  style={{ border: '1.5px solid rgba(120,170,220,0.3)' }}
+                  animate={{ scale: [1, 1.5], opacity: [0.35, 0] }}
                   transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
                 />
                 <motion.div
                   className="absolute inset-0 rounded-full"
-                  style={{ border: '1px solid rgba(160,210,255,0.25)' }}
-                  animate={{ scale: [1, 1.8], opacity: [0.3, 0] }}
+                  style={{ border: '1px solid rgba(120,170,220,0.2)' }}
+                  animate={{ scale: [1, 1.8], opacity: [0.25, 0] }}
                   transition={{ duration: 2, repeat: Infinity, ease: "easeOut", delay: 0.6 }}
                 />
                 <motion.div
                   className="absolute inset-0 rounded-full"
-                  style={{ border: '1px solid rgba(160,210,255,0.15)' }}
-                  animate={{ scale: [1, 2.1], opacity: [0.2, 0] }}
+                  style={{ border: '1px solid rgba(120,170,220,0.1)' }}
+                  animate={{ scale: [1, 2.1], opacity: [0.15, 0] }}
                   transition={{ duration: 2.5, repeat: Infinity, ease: "easeOut", delay: 1.2 }}
                 />
               </>
@@ -199,20 +230,20 @@ export function CSSOrb({ state, size = 'md' }: CSSorbProps) {
               <>
                 <motion.div
                   className="absolute inset-0 rounded-full"
-                  style={{ border: '2px solid rgba(180,210,255,0.4)' }}
-                  animate={{ scale: [1, 1.6], opacity: [0.5, 0] }}
+                  style={{ border: '2px solid rgba(140,180,220,0.35)' }}
+                  animate={{ scale: [1, 1.6], opacity: [0.4, 0] }}
                   transition={{ duration: 1.2, repeat: Infinity, ease: "easeOut" }}
                 />
                 <motion.div
                   className="absolute inset-0 rounded-full"
-                  style={{ border: '1.5px solid rgba(180,210,255,0.3)' }}
-                  animate={{ scale: [1, 2.0], opacity: [0.4, 0] }}
+                  style={{ border: '1.5px solid rgba(140,180,220,0.25)' }}
+                  animate={{ scale: [1, 2.0], opacity: [0.3, 0] }}
                   transition={{ duration: 1.4, repeat: Infinity, ease: "easeOut", delay: 0.3 }}
                 />
                 <motion.div
                   className="absolute inset-0 rounded-full"
-                  style={{ border: '1px solid rgba(180,210,255,0.2)' }}
-                  animate={{ scale: [1, 2.4], opacity: [0.25, 0] }}
+                  style={{ border: '1px solid rgba(140,180,220,0.15)' }}
+                  animate={{ scale: [1, 2.4], opacity: [0.2, 0] }}
                   transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut", delay: 0.6 }}
                 />
               </>
@@ -221,9 +252,9 @@ export function CSSOrb({ state, size = 'md' }: CSSorbProps) {
             {isIdle && (
               <motion.div
                 className="absolute inset-0 rounded-full"
-                style={{ border: '1px solid rgba(160,200,255,0.15)' }}
-                animate={{ scale: [1, 1.3], opacity: [0.2, 0] }}
-                transition={{ duration: 3.5, repeat: Infinity, ease: "easeOut" }}
+                style={{ border: '1px solid rgba(100,140,180,0.08)' }}
+                animate={{ scale: [1, 1.15], opacity: [0.1, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeOut" }}
               />
             )}
           </motion.div>

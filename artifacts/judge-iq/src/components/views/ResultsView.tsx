@@ -113,7 +113,11 @@ export function ResultsView() {
 
 function FloatingOrb() {
   const { state } = useVoiceState();
-  const isActive = state === 'SPEAKING' || state === 'LISTENING';
+  const isListening = state === 'LISTENING';
+  const isSpeaking = state === 'SPEAKING';
+  const isActive = isListening || isSpeaking;
+
+  const label = isSpeaking ? 'Speaking' : isListening ? 'Listening' : 'Ready';
 
   return (
     <motion.div
@@ -133,11 +137,11 @@ function FloatingOrb() {
         )}
         <motion.span
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-          className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-primary/60 uppercase tracking-wider whitespace-nowrap font-mono"
+          animate={{ opacity: isActive ? [0.4, 0.8, 0.4] : 0.6 }}
+          transition={isActive ? { duration: 2, repeat: Infinity, ease: "easeInOut" } : { delay: 1 }}
+          className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-blue-300/60 uppercase tracking-wider whitespace-nowrap font-mono"
         >
-          {isActive ? 'Active' : 'Ready'}
+          {label}
         </motion.span>
       </div>
     </motion.div>
