@@ -154,6 +154,24 @@ export function useElevenLabs() {
             console.warn('[useElevenLabs] changeInputDevice failed (non-fatal):', e);
           }
 
+          const contextParts: string[] = [];
+          if (tendenciesArr.length > 0) {
+            contextParts.push(`KEY TENDENCIES:\n${tendenciesArr.map((t, i) => `${i + 1}. ${t}`).join('\n')}`);
+          }
+          if (biasesArr.length > 0) {
+            contextParts.push(`KNOWN BIASES & INCLINATIONS:\n${biasesArr.map((b, i) => `${i + 1}. ${b}`).join('\n')}`);
+          }
+          if (contextParts.length > 0) {
+            try {
+              const contextUpdate = `Research complete for "${query}". Here is the judicial profile:\n\n${contextParts.join('\n\n')}\n\nUse this information to answer follow-up questions about this judge.`;
+              conversation.sendContextualUpdate(contextUpdate);
+              console.log('[useElevenLabs] sendContextualUpdate injected research context');
+              addLog('Agent context enriched with research data.', 'success');
+            } catch (e) {
+              console.warn('[useElevenLabs] sendContextualUpdate failed (non-fatal):', e);
+            }
+          }
+
           const lastMode = pendingMode.current;
           pendingMode.current = null;
           if (lastMode === 'listening') {

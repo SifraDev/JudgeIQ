@@ -12,11 +12,24 @@ interface FirecrawlItem {
   markdown?: string;
 }
 
-const SYSTEM_PROMPT = `You are a legal research assistant. Given raw scraped data about a judge, produce a structured JSON object with exactly these three keys:
+const SYSTEM_PROMPT = `You are a senior legal research analyst. Given raw scraped data about a judge, produce an exhaustive structured JSON object with exactly these three keys:
 
-1. "spoken_script": A comprehensive, detailed executive summary about the judge, their notable rulings, and judicial philosophy. Write 2 or 3 rich paragraphs. (This will be displayed on the UI dashboard).
-2. "tendencies": An array of exactly 3 strings (10 to 20 words each) describing detailed courtroom tendencies and case management style.
-3. "biases": An array of exactly 2 strings (10 to 20 words each) describing known legal biases or ideological inclinations.
+1. "spoken_script": A comprehensive, detailed executive summary about the judge — their background, appointment history, notable rulings, judicial philosophy, and courtroom reputation. Write 3 to 4 rich paragraphs with specific case names and outcomes where available. (This will be displayed on the UI dashboard).
+
+2. "tendencies": An array of 6 to 8 strings (15 to 30 words each) describing detailed courtroom tendencies. Cover ALL of these categories where data exists:
+   - Procedural patterns (scheduling, discovery, pre-trial management)
+   - Sentencing tendencies (severity, departures from guidelines, alternative sentencing)
+   - Motion rulings (summary judgment grants/denials, motions to dismiss patterns)
+   - Evidentiary preferences (Daubert rulings, hearsay handling, expert witness treatment)
+   - Trial management style (jury instructions, time limits, courtroom demeanor)
+   - Settlement pressure (encouragement of ADR, mediation referrals)
+
+3. "biases": An array of 4 to 6 strings (15 to 30 words each) describing known legal biases and inclinations. Cover ALL of these categories where data exists:
+   - Ideological leanings (conservative/liberal judicial philosophy, originalism vs living constitution)
+   - Party-specific patterns (pro-plaintiff or pro-defendant tendencies, government deference)
+   - Industry attitudes (tech, pharma, financial sector, environmental cases)
+   - Philosophical inclinations (textualism, judicial restraint, rights expansionism)
+   - Notable dissents or concurrences that reveal personal judicial views
 
 Return ONLY valid JSON. No markdown fences, no explanation.`;
 
@@ -87,18 +100,13 @@ router.post("/research", async (req, res) => {
 
     const spoken_script = synthesized.spoken_script || `No summary available for ${query}.`;
 
-    const rawTendencies = Array.isArray(synthesized.tendencies) ? synthesized.tendencies : [];
-    const tendencies = [
-      rawTendencies[0] || `Analyzing procedural patterns for ${query}.`,
-      rawTendencies[1] || "Evaluating courtroom management style.",
-      rawTendencies[2] || "Cross-referencing historical case outcomes.",
-    ];
+    const tendencies = Array.isArray(synthesized.tendencies) && synthesized.tendencies.length > 0
+      ? synthesized.tendencies
+      : [`Analyzing procedural patterns for ${query}.`];
 
-    const rawBiases = Array.isArray(synthesized.biases) ? synthesized.biases : [];
-    const biases = [
-      rawBiases[0] || "Insufficient data for bias determination.",
-      rawBiases[1] || "Further analysis recommended.",
-    ];
+    const biases = Array.isArray(synthesized.biases) && synthesized.biases.length > 0
+      ? synthesized.biases
+      : ["Insufficient data for bias determination."];
 
     req.log.info({ scriptLength: spoken_script.length, tendencies: tendencies.length, biases: biases.length }, "Research: synthesis complete");
 
