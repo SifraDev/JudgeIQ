@@ -83,8 +83,7 @@ export function useElevenLabs() {
     },
     onModeChange: (prop: any) => {
       try {
-        // EL CANDADO MAESTRO: Si la herramienta está buscando, ignoramos los "audios de relleno" 
-        // para que la pantalla no salga del estado PROCESSING.
+        // EL CANDADO MAESTRO: Bloquea interrupciones visuales mientras procesa
         if (isToolRunning.current) return;
 
         const mode = prop?.mode || prop;
@@ -104,6 +103,7 @@ export function useElevenLabs() {
           const query = parameters?.query || parameters?.judge_name || '';
           addLog(`Researching "${query}"...`, 'warning');
 
+          // FORZAMOS LA PANTALLA DE FUEGO
           isToolRunning.current = true;
           setState('PROCESSING');
 
@@ -117,30 +117,39 @@ export function useElevenLabs() {
           if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
 
           const data = await response.json();
-          const results = Array.isArray(data?.results) ? data.results : [];
-          const spokenScript = data?.spoken_script || '';
-          const tendenciesArr = Array.isArray(data?.tendencies) ? data.tendencies : [];
-          const biasesArr = Array.isArray(data?.biases) ? data.biases : [];
+            const results = Array.isArray(data?.results) ? data.results : [];
+            const spokenScript = data?.spoken_script || '';
+            const tendenciesArr = Array.isArray(data?.tendencies) ? data.tendencies : [];
+            const biasesArr = Array.isArray(data?.biases) ? data.biases : [];
 
-          addLog(`Research complete: ${results.length} sources, script ready.`, 'success');
+            addLog(`Research complete: ${results.length} sources, script ready.`, 'success');
 
-          setResearchData({
-            results,
-            tendencies: tendenciesArr,
-            biases: biasesArr,
-          });
+            // --- EL RELOJ DE SUSPENSO (6 SEGUNDOS) ---
+            // Mantiene la pantalla de fuego ardiendo para "vender" la investigación profunda
+            await new Promise(resolve => setTimeout(resolve, 6000));
 
-          isToolRunning.current = false;
-          setState('SPEAKING');
+            // Actualización atómica de la UI
+            setResearchData({
+              results,
+              tendencies: tendenciesArr,
+              biases: biasesArr,
+              // Reutilizamos el campo spokenScript de la UI para guardar el texto largo de OpenAI
+            });
 
-          return spokenScript;
-        } catch (error: any) {
-          isToolRunning.current = false;
-          setState('SPEAKING');
-          const msg = error instanceof Error ? error.message : String(error);
-          addLog(`Research failed: ${msg}`, 'error');
-          return `I was unable to complete the research. ${msg}`;
-        }
+            isToolRunning.current = false;
+            setState('SPEAKING');
+
+            // --- LA VOZ CORTA Y PRECISA ---
+            // Le mandamos a ElevenLabs exactamente la frase que pediste:
+            return "Firecrawl finished the research. What specific area would you like to explore with ElevenLabs?";
+
+          } catch (error: any) {
+            isToolRunning.current = false;
+            setState('SPEAKING');
+            const msg = error instanceof Error ? error.message : String(error);
+            addLog(`Research failed: ${msg}`, 'error');
+            return `I was unable to complete the research. ${msg}`;
+          }
       },
     },
   });
