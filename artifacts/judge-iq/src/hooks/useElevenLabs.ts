@@ -5,7 +5,6 @@ import { useVoiceState } from '@/context/VoiceStateContext';
 const AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID as string || '';
 const MAX_RETRIES = 1;
 const SUSPENSE_DELAY_MS = 4000;
-const MIC_HEALTH_CHECK_DELAY_MS = 500;
 
 interface SearchParameters {
   query?: string;
@@ -24,28 +23,6 @@ async function getSignedUrl(): Promise<string | null> {
   }
 }
 
-function checkMicStreamHealth(stream: MediaStream | null): { alive: boolean; details: string } {
-  if (!stream) {
-    return { alive: false, details: 'No MediaStream stored' };
-  }
-
-  const tracks = stream.getAudioTracks();
-  if (tracks.length === 0) {
-    return { alive: false, details: 'MediaStream has no audio tracks' };
-  }
-
-  const staleTrack = tracks.find(t => t.readyState === 'ended' || !t.enabled);
-  if (staleTrack) {
-    return {
-      alive: false,
-      details: `Track "${staleTrack.label}" is ${staleTrack.readyState}, enabled=${staleTrack.enabled}`,
-    };
-  }
-
-  const trackInfo = tracks.map(t => `"${t.label}" readyState=${t.readyState} enabled=${t.enabled}`).join(', ');
-  return { alive: true, details: trackInfo };
-}
-
 export function useElevenLabs() {
   const { setState, addLog, setResearchData, addTranscript } = useVoiceState();
   const isToolRunning = useRef(false);
@@ -53,7 +30,6 @@ export function useElevenLabs() {
   const isRetrying = useRef(false);
   const pendingMode = useRef<string | null>(null);
   const micStream = useRef<MediaStream | null>(null);
-  const needsSessionRestart = useRef(false);
 
   const conversation = useConversation({
     onConnect: () => {
@@ -68,18 +44,8 @@ export function useElevenLabs() {
     },
     onDisconnect: () => {
       try {
-        const wasToolRestart = needsSessionRestart.current;
         isToolRunning.current = false;
         pendingMode.current = null;
-        needsSessionRestart.current = false;
-
-        if (wasToolRestart) {
-          addLog('Session ended for mic recovery. Reconnecting...', 'system');
-          setTimeout(() => {
-            attemptReconnect();
-          }, 300);
-          return;
-        }
 
         if (retryCount.current < MAX_RETRIES && !isRetrying.current) {
           isRetrying.current = true;
@@ -178,36 +144,15 @@ export function useElevenLabs() {
           isToolRunning.current = false;
 
           try {
-            const ctx = new AudioContext();
-            if (ctx.state === 'suspended') {
-              await ctx.resume();
-              console.log('[useElevenLabs] Resumed suspended AudioContext after tool execution');
-            }
-            await ctx.close();
+            await conversation.changeInputDevice({
+              format: 'pcm',
+              sampleRate: 16000,
+            });
+            console.log('[useElevenLabs] changeInputDevice succeeded — mic re-acquired within session');
+            addLog('Mic input refreshed. Ready for follow-up questions.', 'success');
           } catch (e) {
-            console.warn('[useElevenLabs] AudioContext resume after tool failed:', e);
+            console.warn('[useElevenLabs] changeInputDevice failed (non-fatal):', e);
           }
-
-          const micHealth = checkMicStreamHealth(micStream.current);
-          console.log('[useElevenLabs] Post-tool mic health:', micHealth);
-
-          if (!micHealth.alive) {
-            addLog(`Mic stream stale (${micHealth.details}). Restarting session...`, 'warning');
-            needsSessionRestart.current = true;
-
-            try {
-              await conversation.endSession();
-            } catch (e) {
-              console.warn('[useElevenLabs] endSession for restart failed:', e);
-              needsSessionRestart.current = false;
-              setState('SPEAKING');
-            }
-
-            return "Firecrawl finished the research. What specific area would you like to explore with ElevenLabs?";
-          }
-
-          const sdkInputVol = conversation.getInputVolume();
-          console.log('[useElevenLabs] Post-tool SDK input volume:', sdkInputVol);
 
           const lastMode = pendingMode.current;
           pendingMode.current = null;
@@ -217,26 +162,22 @@ export function useElevenLabs() {
             setState('SPEAKING');
           }
 
-          addLog(`Mic verified: tracks healthy (vol=${sdkInputVol.toFixed(2)}).`, 'success');
-
-          await new Promise(resolve => setTimeout(resolve, MIC_HEALTH_CHECK_DELAY_MS));
-          const delayedVol = conversation.getInputVolume();
-          if (delayedVol <= 0 && micHealth.alive) {
-            addLog('SDK input silent after tool. Forcing session restart for fresh mic...', 'warning');
-            needsSessionRestart.current = true;
-            try {
-              await conversation.endSession();
-            } catch (e) {
-              console.warn('[useElevenLabs] delayed restart failed:', e);
-              needsSessionRestart.current = false;
-            }
-          }
-
           return "Firecrawl finished the research. What specific area would you like to explore with ElevenLabs?";
 
         } catch (error: any) {
           isToolRunning.current = false;
           pendingMode.current = null;
+
+          try {
+            await conversation.changeInputDevice({
+              format: 'pcm',
+              sampleRate: 16000,
+            });
+            console.log('[useElevenLabs] changeInputDevice succeeded on error path');
+          } catch (e) {
+            console.warn('[useElevenLabs] changeInputDevice failed on error path (non-fatal):', e);
+          }
+
           setState('SPEAKING');
           const msg = error instanceof Error ? error.message : String(error);
           addLog(`Research failed: ${msg}`, 'error');
@@ -265,27 +206,13 @@ export function useElevenLabs() {
         micStream.current = null;
       }
 
-      try {
-        const ctx = new AudioContext();
-        if (ctx.state === 'suspended') {
-          await ctx.resume();
-          console.log('[useElevenLabs] Resumed suspended AudioContext before reconnect');
-        }
-        await ctx.close();
-      } catch (e) {
-        console.warn('[useElevenLabs] AudioContext resume before reconnect failed:', e);
-      }
-
       const freshStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       micStream.current = freshStream;
-      const health = checkMicStreamHealth(freshStream);
-      console.log('[useElevenLabs] Fresh mic acquired for reconnect:', health);
-      addLog('Fresh mic acquired. Reconnecting...', 'system');
+      addLog('Reconnecting...', 'system');
 
       await startSession();
     } catch (error: any) {
       isRetrying.current = false;
-      needsSessionRestart.current = false;
       const msg = error instanceof Error ? error.message : String(error);
       addLog(`Reconnection failed: ${msg}. Tap the orb to try again.`, 'error');
       setState('IDLE');
@@ -309,8 +236,6 @@ export function useElevenLabs() {
         }
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         micStream.current = stream;
-        const health = checkMicStreamHealth(stream);
-        console.log('[useElevenLabs] Initial mic acquired:', health);
       } catch (micError: any) {
         addLog(`Microphone permission denied: ${micError.message}`, 'error');
         setState('IDLE');
