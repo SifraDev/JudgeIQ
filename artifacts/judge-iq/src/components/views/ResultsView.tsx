@@ -23,15 +23,11 @@ export function ResultsView() {
 
   const dynamicTendencies = tendencies.length > 0
     ? tendencies
-    : [
-        `Analyzing recent rulings by ${judgeName} for procedural patterns.`,
-        "Evaluating typical courtroom management style.",
-        "Cross-referencing historical case outcomes.",
-      ];
+    : [`Analyzing procedural patterns for ${judgeName}.`];
 
   const dynamicBiases = biases.length > 0
     ? biases
-    : ["Awaiting deeper semantic analysis from judicial records..."];
+    : ["Analyzing judicial records for biases and inclinations..."];
 
   const handleExportPDF = () => {
     if (!contentRef.current) return;
