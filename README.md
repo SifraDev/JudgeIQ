@@ -1,5 +1,9 @@
 # JudgeIQ
 
+![ElevenHacks](https://img.shields.io/badge/ElevenHacks-Hackathon-7C3AED?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIgZmlsbD0id2hpdGUiLz48L3N2Zz4=)
+![ElevenLabs](https://img.shields.io/badge/ElevenLabs-Conversational_AI-000000?style=for-the-badge)
+![Firecrawl](https://img.shields.io/badge/Firecrawl-Web_Scraping-FF6B35?style=for-the-badge)
+
 **Voice-powered judicial intelligence.**
 
 > Built for [ElevenHacks](https://elevenlabs.io) — combining **ElevenLabs Conversational AI** + **Firecrawl** to give lawyers instant, voice-driven judicial profiles.
