@@ -75,9 +75,6 @@ No typing. No searching. Just ask.
 
 ---
 
-## Screenshots
-
-> *Add your screenshots here*
 
 | Idle State | Processing | Results Dashboard |
 |:---:|:---:|:---:|
@@ -235,11 +232,6 @@ curl -X POST http://localhost:8080/api/research \
 - [OpenAI](https://openai.com) — GPT-4o-mini for legal data synthesis
 - [Replit](https://replit.com) — Development and hosting platform
 
----
-
-## Team
-
-> *Add your team members here*
 
 ---
 
