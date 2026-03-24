@@ -3,7 +3,6 @@ import { useConversation } from '@elevenlabs/react';
 import { useVoiceState } from '@/context/VoiceStateContext';
 
 const AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID as string || '';
-const MAX_RETRIES = 1;
 const SUSPENSE_DELAY_MS = 4000;
 
 interface SearchParameters {
@@ -26,16 +25,13 @@ async function getSignedUrl(): Promise<string | null> {
 export function useElevenLabs() {
   const { setState, addLog, setResearchData, addTranscript } = useVoiceState();
   const isToolRunning = useRef(false);
-  const retryCount = useRef(0);
-  const isRetrying = useRef(false);
+  const intentionalStop = useRef(false);
   const pendingMode = useRef<string | null>(null);
   const micStream = useRef<MediaStream | null>(null);
 
   const conversation = useConversation({
     onConnect: () => {
       try {
-        retryCount.current = 0;
-        isRetrying.current = false;
         addLog('Connected to ElevenAgents.', 'success');
         setState('LISTENING');
       } catch (e) {
@@ -47,17 +43,12 @@ export function useElevenLabs() {
         isToolRunning.current = false;
         pendingMode.current = null;
 
-        if (retryCount.current < MAX_RETRIES && !isRetrying.current) {
-          isRetrying.current = true;
-          retryCount.current += 1;
-          addLog(`Connection lost. Retrying (${retryCount.current}/${MAX_RETRIES})...`, 'warning');
-          setTimeout(() => {
-            attemptReconnect();
-          }, 1500);
-          return;
+        if (intentionalStop.current) {
+          intentionalStop.current = false;
+          addLog('Session ended.', 'system');
+        } else {
+          addLog('Disconnected. Tap the orb to reconnect.', 'info');
         }
-
-        addLog('Connection lost. Tap the orb to reconnect.', 'error');
         setState('IDLE');
       } catch (e) {
         console.warn('[useElevenLabs] onDisconnect error:', e);
@@ -217,26 +208,6 @@ export function useElevenLabs() {
     }
   }, [conversation, addLog]);
 
-  const attemptReconnect = useCallback(async () => {
-    try {
-      if (micStream.current) {
-        micStream.current.getTracks().forEach(t => t.stop());
-        micStream.current = null;
-      }
-
-      const freshStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      micStream.current = freshStream;
-      addLog('Reconnecting...', 'system');
-
-      await startSession();
-    } catch (error: any) {
-      isRetrying.current = false;
-      const msg = error instanceof Error ? error.message : String(error);
-      addLog(`Reconnection failed: ${msg}. Tap the orb to try again.`, 'error');
-      setState('IDLE');
-    }
-  }, [startSession, addLog, setState]);
-
   const start = useCallback(async () => {
     try {
       if (!AGENT_ID) {
@@ -244,8 +215,7 @@ export function useElevenLabs() {
         return;
       }
 
-      retryCount.current = 0;
-      isRetrying.current = false;
+      intentionalStop.current = false;
       addLog('Connecting to ElevenAgents...', 'system');
 
       try {
@@ -270,7 +240,7 @@ export function useElevenLabs() {
 
   const stop = useCallback(async () => {
     try {
-      retryCount.current = MAX_RETRIES;
+      intentionalStop.current = true;
       addLog('Ending session...', 'system');
       if (micStream.current) {
         micStream.current.getTracks().forEach(t => t.stop());
