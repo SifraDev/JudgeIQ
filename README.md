@@ -75,13 +75,6 @@ No typing. No searching. Just ask.
 
 ---
 
-
-| Idle State | Processing | Results Dashboard |
-|:---:|:---:|:---:|
-| ![Idle](screenshots/idle.png) | ![Processing](screenshots/processing.png) | ![Results](screenshots/results.png) |
-
----
-
 ## Tech Stack
 
 | Layer | Technology |
