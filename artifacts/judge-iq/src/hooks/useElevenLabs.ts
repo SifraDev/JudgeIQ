@@ -177,6 +177,17 @@ export function useElevenLabs() {
 
           isToolRunning.current = false;
 
+          try {
+            const ctx = new AudioContext();
+            if (ctx.state === 'suspended') {
+              await ctx.resume();
+              console.log('[useElevenLabs] Resumed suspended AudioContext after tool execution');
+            }
+            await ctx.close();
+          } catch (e) {
+            console.warn('[useElevenLabs] AudioContext resume after tool failed:', e);
+          }
+
           const micHealth = checkMicStreamHealth(micStream.current);
           console.log('[useElevenLabs] Post-tool mic health:', micHealth);
 
@@ -253,6 +264,18 @@ export function useElevenLabs() {
         micStream.current.getTracks().forEach(t => t.stop());
         micStream.current = null;
       }
+
+      try {
+        const ctx = new AudioContext();
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+          console.log('[useElevenLabs] Resumed suspended AudioContext before reconnect');
+        }
+        await ctx.close();
+      } catch (e) {
+        console.warn('[useElevenLabs] AudioContext resume before reconnect failed:', e);
+      }
+
       const freshStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       micStream.current = freshStream;
       const health = checkMicStreamHealth(freshStream);
