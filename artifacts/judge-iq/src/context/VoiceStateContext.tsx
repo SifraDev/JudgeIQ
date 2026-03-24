@@ -20,6 +20,7 @@ interface ResearchData {
   results: FirecrawlResult[];
   tendencies: string[];
   biases: string[];
+  spokenScript: string;
 }
 
 interface VoiceStateContextType {
@@ -29,6 +30,7 @@ interface VoiceStateContextType {
   transcript: TranscriptEntry[];
   tendencies: string[];
   biases: string[];
+  spokenScript: string;
   hasResults: boolean;
   setState: (state: VoiceState) => void;
   addLog: (message: string, type?: LogEntry['type']) => void;
@@ -48,6 +50,7 @@ export function VoiceStateProvider({ children }: { children: ReactNode }) {
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [tendencies, setTendenciesRaw] = useState<string[]>([]);
   const [biases, setBiasesRaw] = useState<string[]>([]);
+  const [spokenScript, setSpokenScriptRaw] = useState('');
   const [hasResults, setHasResults] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([
     {
@@ -90,6 +93,7 @@ export function VoiceStateProvider({ children }: { children: ReactNode }) {
     setSearchResultsRaw(data.results);
     setTendenciesRaw(data.tendencies);
     setBiasesRaw(data.biases);
+    setSpokenScriptRaw(data.spokenScript);
     setHasResults(true);
   }, []);
 
@@ -99,6 +103,7 @@ export function VoiceStateProvider({ children }: { children: ReactNode }) {
     setTranscript([]);
     setTendenciesRaw([]);
     setBiasesRaw([]);
+    setSpokenScriptRaw('');
     setHasResults(false);
     setLogs([{
       id: Math.random().toString(36).substring(7),
@@ -134,6 +139,7 @@ export function VoiceStateProvider({ children }: { children: ReactNode }) {
       transcript,
       tendencies,
       biases,
+      spokenScript,
       hasResults,
       setState: setVoiceState,
       addLog,

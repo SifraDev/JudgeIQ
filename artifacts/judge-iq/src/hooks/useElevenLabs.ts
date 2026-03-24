@@ -4,6 +4,7 @@ import { useVoiceState } from '@/context/VoiceStateContext';
 
 const AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID as string || '';
 const MAX_RETRIES = 1;
+const SUSPENSE_DELAY_MS = 4000;
 
 interface SearchParameters {
   query?: string;
@@ -22,11 +23,40 @@ async function getSignedUrl(): Promise<string | null> {
   }
 }
 
+async function ensureMicrophoneAlive(): Promise<void> {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const tracks = stream.getAudioTracks();
+    for (const track of tracks) {
+      if (track.readyState === 'ended' || !track.enabled) {
+        console.warn('[useElevenLabs] Stale audio track detected, re-acquired mic');
+      }
+      track.stop();
+    }
+  } catch (e) {
+    console.warn('[useElevenLabs] ensureMicrophoneAlive failed:', e);
+  }
+}
+
+async function resumeAudioContext(): Promise<void> {
+  try {
+    const ctx = new AudioContext();
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+      console.log('[useElevenLabs] AudioContext resumed from suspended state');
+    }
+    await ctx.close();
+  } catch (e) {
+    console.warn('[useElevenLabs] resumeAudioContext failed:', e);
+  }
+}
+
 export function useElevenLabs() {
   const { setState, addLog, setResearchData, addTranscript } = useVoiceState();
   const isToolRunning = useRef(false);
   const retryCount = useRef(0);
   const isRetrying = useRef(false);
+  const pendingMode = useRef<string | null>(null);
 
   const conversation = useConversation({
     onConnect: () => {
@@ -42,6 +72,7 @@ export function useElevenLabs() {
     onDisconnect: () => {
       try {
         isToolRunning.current = false;
+        pendingMode.current = null;
 
         if (retryCount.current < MAX_RETRIES && !isRetrying.current) {
           isRetrying.current = true;
@@ -83,10 +114,14 @@ export function useElevenLabs() {
     },
     onModeChange: (prop: any) => {
       try {
-        // EL CANDADO MAESTRO: Bloquea interrupciones visuales mientras procesa
-        if (isToolRunning.current) return;
-
         const mode = prop?.mode || prop;
+
+        if (isToolRunning.current) {
+          pendingMode.current = mode;
+          console.log('[useElevenLabs] Mode change during tool execution (buffered):', mode);
+          return;
+        }
+
         if (mode === 'speaking') {
           setState('SPEAKING');
         } else if (mode === 'listening') {
@@ -103,8 +138,8 @@ export function useElevenLabs() {
           const query = parameters?.query || parameters?.judge_name || '';
           addLog(`Researching "${query}"...`, 'warning');
 
-          // FORZAMOS LA PANTALLA DE FUEGO
           isToolRunning.current = true;
+          pendingMode.current = null;
           setState('PROCESSING');
 
           const baseUrl = (import.meta.env.BASE_URL as string || '').replace(/\/$/, '');
@@ -117,39 +152,49 @@ export function useElevenLabs() {
           if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
 
           const data = await response.json();
-            const results = Array.isArray(data?.results) ? data.results : [];
-            const spokenScript = data?.spoken_script || '';
-            const tendenciesArr = Array.isArray(data?.tendencies) ? data.tendencies : [];
-            const biasesArr = Array.isArray(data?.biases) ? data.biases : [];
+          const results = Array.isArray(data?.results) ? data.results : [];
+          const spokenScript = data?.spoken_script || '';
+          const tendenciesArr = Array.isArray(data?.tendencies) ? data.tendencies : [];
+          const biasesArr = Array.isArray(data?.biases) ? data.biases : [];
 
-            addLog(`Research complete: ${results.length} sources, script ready.`, 'success');
+          addLog(`Research complete: ${results.length} sources, script ready.`, 'success');
 
-            // --- EL RELOJ DE SUSPENSO (6 SEGUNDOS) ---
-            // Mantiene la pantalla de fuego ardiendo para "vender" la investigación profunda
-            await new Promise(resolve => setTimeout(resolve, 6000));
+          await new Promise(resolve => setTimeout(resolve, SUSPENSE_DELAY_MS));
 
-            // Actualización atómica de la UI
-            setResearchData({
-              results,
-              tendencies: tendenciesArr,
-              biases: biasesArr,
-              // Reutilizamos el campo spokenScript de la UI para guardar el texto largo de OpenAI
-            });
+          setResearchData({
+            results,
+            tendencies: tendenciesArr,
+            biases: biasesArr,
+            spokenScript,
+          });
 
-            isToolRunning.current = false;
+          isToolRunning.current = false;
+
+          await Promise.all([
+            ensureMicrophoneAlive(),
+            resumeAudioContext(),
+          ]);
+
+          const lastMode = pendingMode.current;
+          pendingMode.current = null;
+          if (lastMode === 'listening') {
+            setState('LISTENING');
+          } else {
             setState('SPEAKING');
-
-            // --- LA VOZ CORTA Y PRECISA ---
-            // Le mandamos a ElevenLabs exactamente la frase que pediste:
-            return "Firecrawl finished the research. What specific area would you like to explore with ElevenLabs?";
-
-          } catch (error: any) {
-            isToolRunning.current = false;
-            setState('SPEAKING');
-            const msg = error instanceof Error ? error.message : String(error);
-            addLog(`Research failed: ${msg}`, 'error');
-            return `I was unable to complete the research. ${msg}`;
           }
+
+          addLog('Audio pipeline verified. Mic active.', 'success');
+
+          return "Firecrawl finished the research. What specific area would you like to explore with ElevenLabs?";
+
+        } catch (error: any) {
+          isToolRunning.current = false;
+          pendingMode.current = null;
+          setState('SPEAKING');
+          const msg = error instanceof Error ? error.message : String(error);
+          addLog(`Research failed: ${msg}`, 'error');
+          return `I was unable to complete the research. ${msg}`;
+        }
       },
     },
   });

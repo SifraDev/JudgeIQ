@@ -9,22 +9,16 @@ import html2pdf from 'html2pdf.js';
 import { useElevenLabsSession } from '@/components/ElevenLabsSession';
 
 export function ResultsView() {
-  const { searchResults, transcript, tendencies, biases, state } = useVoiceState();
+  const { searchResults, spokenScript, tendencies, biases, state } = useVoiceState();
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // --- 1. LÓGICA DINÁMICA DE DATOS ---
-  // Extraer el nombre del juez del primer resultado de Firecrawl (Ej: "Yvonne Gonzalez Rogers - Ballotpedia" -> "Yvonne Gonzalez Rogers")
-  // --- 1. LÓGICA DINÁMICA DE DATOS ---
   let judgeName = "Judge Profile";
   if (searchResults && searchResults.length > 0) {
-    // Le agregamos "as any" para que TypeScript apruebe el acceso a .title
     judgeName = (searchResults[0] as any).title?.split(/[-|]/)[0].trim() || "Judge Profile";
   }
 
-  // Extraer lo que el agente realmente dijo de la transcripción
-  const agentText = transcript.filter(t => t.role === 'agent').map(t => t.message).join(' ');
-  const dynamicSummary = agentText.length > 10 
-    ? agentText 
+  const dynamicSummary = spokenScript.length > 10
+    ? spokenScript
     : "Analyzing judicial records and synthesizing profile... Please wait for the agent to finish speaking.";
 
   const dynamicTendencies = tendencies.length > 0
@@ -92,7 +86,6 @@ export function ResultsView() {
 
       <div ref={contentRef} className="max-w-6xl mx-auto px-6 py-10 flex flex-col gap-8">
 
-        {/* ENCABEZADO DEL PERFIL (DINÁMICO) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -112,16 +105,14 @@ export function ResultsView() {
           animate="show"
           className="grid grid-cols-1 md:grid-cols-3 gap-6"
         >
-          {/* TARJETA 1: TL;DR (TRANSCRIPCIÓN REAL) */}
           <motion.div variants={itemVariants} className="md:col-span-3 bg-neutral-900/50 border border-white/5 p-6 rounded-xl shadow-lg relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-yellow-500/70" />
             <h3 className="text-yellow-500 font-bold uppercase tracking-wider text-xs mb-3 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" /> Executive Summary (Live Synthesis)
+              <AlertCircle className="w-4 h-4" /> Executive Summary
             </h3>
             <p className="text-gray-200 text-lg leading-relaxed">{dynamicSummary}</p>
           </motion.div>
 
-          {/* TARJETA 2: PATRONES */}
           <motion.div variants={itemVariants} className="md:col-span-1 bg-neutral-900/30 border border-white/5 p-6 rounded-xl shadow-lg">
              <h3 className="text-blue-400 font-bold uppercase tracking-wider text-xs mb-4 flex items-center gap-2">
               <TrendingUp className="w-4 h-4" /> Key Tendencies
@@ -135,7 +126,6 @@ export function ResultsView() {
             </ul>
           </motion.div>
 
-          {/* TARJETA 3: SESGOS E INCLINACIONES */}
           <motion.div variants={itemVariants} className="md:col-span-2 bg-neutral-900/30 border border-white/5 p-6 rounded-xl shadow-lg">
              <h3 className="text-red-400 font-bold uppercase tracking-wider text-xs mb-4 flex items-center gap-2">
               <Fingerprint className="w-4 h-4" /> Known Biases & Inclinations
@@ -150,7 +140,6 @@ export function ResultsView() {
           </motion.div>
         </motion.div>
 
-        {/* CITACIONES DE FIRECRAWL */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -168,16 +157,16 @@ export function ResultsView() {
 
 function FloatingOrb() {
   const { state } = useVoiceState();
-  const { start, stop, status } = useElevenLabsSession();
+  const { start, status } = useElevenLabsSession();
 
-  const isActive = state === 'SPEAKING' || state === 'LISTENING' || status === 'connected';
+  const isConnected = status === 'connected';
+  const isActive = state === 'SPEAKING' || state === 'LISTENING' || isConnected;
 
-  const handleMicToggle = async () => {
-    if (isActive) {
-      await stop(); // El abogado lo apaga para leer tranquilo
-    } else {
-      await start(); // Lo enciende para hacer preguntas de seguimiento
+  const handleOrbTap = async () => {
+    if (isConnected) {
+      return;
     }
+    await start();
   };
 
   return (
@@ -185,18 +174,16 @@ function FloatingOrb() {
       initial={{ opacity: 0, scale: 0.5, y: 50 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ delay: 0.6, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      // CAMBIO DE POSICIÓN: Lo subimos (bottom-20) y lo despegamos un poco del borde (right-12)
       className="fixed bottom-20 right-12 z-40 cursor-pointer"
-      onClick={handleMicToggle}
+      onClick={handleOrbTap}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      title={isActive ? "Click to Mute/Stop" : "Click to Ask a Question"}
+      title={isConnected ? "Mic is live — just speak" : "Tap to reconnect"}
     >
       <div className="flex flex-col items-center">
         <div className="relative">
           <CSSOrb state={state} size="sm" />
 
-          {/* Puntito verde de "En vivo" */}
           {isActive && (
             <motion.div
               className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-black z-20"
@@ -206,16 +193,15 @@ function FloatingOrb() {
           )}
         </div>
 
-        {/* TEXTO DEBAJO DEL ORBE (Ya no está montado encima) */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
           className={`mt-3 text-[10px] uppercase tracking-widest font-bold whitespace-nowrap ${
-            isActive ? 'text-green-400' : 'text-neutral-500'
+            isConnected ? 'text-green-400' : 'text-neutral-500'
           }`}
         >
-          {isActive ? 'Listening...' : 'Mic Off - Tap to Ask'}
+          {isConnected ? 'Listening...' : 'Tap to Reconnect'}
         </motion.div>
       </div>
     </motion.div>
